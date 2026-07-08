@@ -67,7 +67,7 @@ const testimonials = [
     role: "HR Director",
     image: "/images/testimonial-elena.png",
     quote:
-      "We recommend JobMatch to candidates because it gives clear, actionable guidance instead of generic resume advice. The experience feels premium and precise.",
+      "We recommend JobMatch to candidates because it gives clear, actionable guidance instead of generic resume advice. The experience feels simple, polished, and precise.",
   },
 ];
 
