@@ -1,46 +1,71 @@
-import { Card, ConfirmationStrip, PageHeader } from "../components";
-
 export default function AdminProfilePage() {
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Profile"
-        description="Manage admin identity, profile photo, contact email, and password security."
-      />
-      <div className="grid gap-6 xl:grid-cols-[0.7fr_1.3fr]">
-        <Card>
-          <div className="grid place-items-center text-center">
-            <div className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600 text-3xl font-black text-white shadow-xl shadow-blue-500/20">
-              AD
+    <div className="space-y-7">
+      <section className="overflow-hidden rounded-3xl border border-cyan-100/80 bg-white shadow-sm shadow-slate-900/10">
+        <div className="bg-gradient-to-r from-cyan-50 via-white to-indigo-50 px-6 py-7 sm:px-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-5">
+              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-indigo-600 text-2xl font-black text-white shadow-xl shadow-cyan-500/20">
+                AD
+              </div>
+              <div>
+                <h1 className="text-3xl font-black tracking-tight text-slate-950">
+                  Admin User
+                </h1>
+                <p className="mt-1 text-sm font-semibold text-slate-500">
+                  admin@jobmatch.com
+                </p>
+              </div>
             </div>
-            <h2 className="mt-5 text-xl font-black">Admin User</h2>
-            <p className="mt-1 text-sm text-slate-500">admin@jobmatch.com</p>
-            <button className="mt-5 rounded-full border border-blue-100 px-5 py-2 text-sm font-bold text-blue-700">
-              Upload photo
+            <button className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-cyan-100 bg-white px-6 text-sm font-bold text-cyan-700 shadow-sm transition hover:bg-cyan-50">
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              >
+                <path d="M12 3v12" />
+                <path d="m17 8-5-5-5 5" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              </svg>
+              Upload Photo
             </button>
           </div>
-        </Card>
-        <Card>
-          <form className="grid gap-5 md:grid-cols-2">
+        </div>
+
+        <div className="border-t border-slate-100">
+          <form className="grid gap-5 p-6 sm:p-8 md:grid-cols-2">
+            <h2 className="text-xl font-black text-slate-950 md:col-span-2">
+              Account Details
+            </h2>
             <label className="text-sm font-bold text-slate-800">
               Admin name
               <input
-                className="mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-blue-50/30 px-4"
+                className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
                 defaultValue="Admin User"
               />
             </label>
             <label className="text-sm font-bold text-slate-800">
               Email
               <input
-                className="mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-blue-50/30 px-4"
+                className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
                 defaultValue="admin@jobmatch.com"
               />
             </label>
+            <div className="mt-2 border-t border-slate-100 pt-5 md:col-span-2">
+              <h2 className="text-xl font-black text-slate-950">
+                Security
+              </h2>
+            </div>
             <label className="text-sm font-bold text-slate-800">
               New password
               <input
                 type="password"
-                className="mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-blue-50/30 px-4"
+                className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
                 placeholder="Enter new password"
               />
             </label>
@@ -48,19 +73,24 @@ export default function AdminProfilePage() {
               Confirm password
               <input
                 type="password"
-                className="mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-blue-50/30 px-4"
+                className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
                 placeholder="Confirm password"
               />
             </label>
-            <div className="md:col-span-2">
-              <button className="h-12 rounded-full bg-blue-600 px-7 text-sm font-bold text-white">
-                Edit profile
+            <div className="flex flex-wrap gap-3 md:col-span-2">
+              <button className="h-12 rounded-full bg-cyan-600 px-7 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                Save Profile
+              </button>
+              <button
+                type="button"
+                className="h-12 rounded-full border border-cyan-100 bg-white px-7 text-sm font-bold text-cyan-700 transition hover:bg-cyan-50"
+              >
+                Cancel
               </button>
             </div>
           </form>
-        </Card>
-      </div>
-      <ConfirmationStrip type="success" />
+        </div>
+      </section>
     </div>
   );
 }
