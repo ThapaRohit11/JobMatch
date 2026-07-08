@@ -186,13 +186,13 @@ export default function LandingPage() {
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
               <Link
-                href="/signup"
+                href="/login"
                 className="inline-flex h-14 items-center justify-center rounded-full bg-blue-600 px-7 text-base font-bold text-white shadow-xl shadow-blue-500/25 transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 Upload Resume
               </Link>
               <Link
-                href="/user"
+                href="/login"
                 className="inline-flex h-14 items-center justify-center rounded-full border border-blue-200 bg-white/80 px-7 text-base font-bold text-blue-700 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-blue-400 hover:bg-blue-50"
               >
                 Explore Jobs
