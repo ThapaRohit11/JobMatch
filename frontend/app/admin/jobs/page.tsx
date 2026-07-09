@@ -126,11 +126,40 @@ function EditJobForm({
               <option>Hybrid</option>
             </select>
           </label>
+          <label className="block text-sm font-bold text-slate-800">
+            Apply by
+            <input
+              type="date"
+              defaultValue="2026-07-28"
+              className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+            />
+          </label>
           <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
-            Description
+            Job description
             <textarea
               className="mt-2 min-h-36 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
               defaultValue={`${selectedCompanyName} is hiring a ${job.title}. This role is ${job.type.toLowerCase()} and based in ${selectedCompany?.location ?? job.location}.`}
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
+            Responsibilities
+            <textarea
+              className="mt-2 min-h-32 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              defaultValue={`Deliver high-quality work for the ${job.title} role.\nCollaborate with product and cross-functional teams.\nMaintain quality, performance, and clear documentation.`}
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
+            Requirements
+            <textarea
+              className="mt-2 min-h-32 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              defaultValue={`Relevant experience for the ${job.title} position.\nStrong communication and problem-solving skills.\nAbility to work effectively with a collaborative team.`}
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
+            Benefits
+            <textarea
+              className="mt-2 min-h-28 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              defaultValue={"Health and wellness coverage\nPaid time off\nLearning budget\nFlexible working hours"}
             />
           </label>
           <div className="flex flex-wrap gap-3 lg:col-span-2">
