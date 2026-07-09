@@ -17,23 +17,6 @@ export default function AdminProfilePage() {
                 </p>
               </div>
             </div>
-            <button className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-cyan-100 bg-white px-6 text-sm font-bold text-cyan-700 shadow-sm transition hover:bg-cyan-50">
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              >
-                <path d="M12 3v12" />
-                <path d="m17 8-5-5-5 5" />
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              </svg>
-              Upload Photo
-            </button>
           </div>
         </div>
 
@@ -56,15 +39,30 @@ export default function AdminProfilePage() {
                 defaultValue="admin@jobmatch.com"
               />
             </label>
+            <div className="flex flex-wrap gap-3 md:col-span-2">
+              <button className="h-12 rounded-full bg-cyan-600 px-7 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
+                Save Profile
+              </button>
+            </div>
             <div className="mt-2 border-t border-slate-100 pt-5 md:col-span-2">
               <h2 className="text-xl font-black text-slate-950">
                 Security
               </h2>
             </div>
+            <label className="text-sm font-bold text-slate-800 md:col-span-2">
+              Old password
+              <input
+                type="password"
+                autoComplete="current-password"
+                className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+                placeholder="Enter old password"
+              />
+            </label>
             <label className="text-sm font-bold text-slate-800">
               New password
               <input
                 type="password"
+                autoComplete="new-password"
                 className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
                 placeholder="Enter new password"
               />
@@ -73,19 +71,14 @@ export default function AdminProfilePage() {
               Confirm password
               <input
                 type="password"
+                autoComplete="new-password"
                 className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
                 placeholder="Confirm password"
               />
             </label>
             <div className="flex flex-wrap gap-3 md:col-span-2">
               <button className="h-12 rounded-full bg-cyan-600 px-7 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700">
-                Save Profile
-              </button>
-              <button
-                type="button"
-                className="h-12 rounded-full border border-cyan-100 bg-white px-7 text-sm font-bold text-cyan-700 transition hover:bg-cyan-50"
-              >
-                Cancel
+                Update Password
               </button>
             </div>
           </form>
