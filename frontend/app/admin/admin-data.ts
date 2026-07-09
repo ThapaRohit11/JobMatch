@@ -249,7 +249,7 @@ export const applications = [
     company: "BluePeak Labs",
     location: "Remote",
     date: "Jul 05, 2026",
-    status: "In Review",
+    status: "Pending",
   },
   {
     applicant: "Sofia Reed",
