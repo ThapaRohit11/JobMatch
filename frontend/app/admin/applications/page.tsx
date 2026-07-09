@@ -4,8 +4,51 @@ import { useState } from "react";
 import { applications, resumes } from "../admin-data";
 
 type Application = (typeof applications)[number];
-type ApplicationStatus = "In Review" | "Accepted" | "Rejected";
+type ApplicationStatus = "Pending" | "In Review" | "Accepted" | "Rejected";
 type Resume = (typeof resumes)[number];
+
+const candidateResumeDetails: Record<
+  string,
+  {
+    summary: string;
+    skills: string;
+    experience: string;
+    education: string;
+  }
+> = {
+  "maya.chen@email.com": {
+    summary:
+      "Product manager experienced in turning customer insights into clear product strategy and measurable launches.",
+    skills: "Product strategy, Roadmapping, Analytics, Agile, User research",
+    experience:
+      "Led cross-functional product launches and improved feature adoption through customer research and data-informed prioritization.",
+    education: "B.S. Business Administration — University of California",
+  },
+  "aarav.sharma@email.com": {
+    summary:
+      "Backend engineer focused on reliable APIs, scalable services, and secure cloud infrastructure.",
+    skills: "Node.js, Python, PostgreSQL, AWS, Docker, REST APIs",
+    experience:
+      "Built and maintained production services, improved API performance, and strengthened monitoring across distributed systems.",
+    education: "B.S. Computer Science — Pacific Tech University",
+  },
+  "sofia.reed@email.com": {
+    summary:
+      "UX researcher who turns qualitative and quantitative findings into practical improvements for digital products.",
+    skills: "User interviews, Usability testing, Figma, Research synthesis",
+    experience:
+      "Planned research studies, facilitated usability sessions, and partnered with design teams to improve core user journeys.",
+    education: "M.S. Human-Computer Interaction — State University",
+  },
+  "noah.kim@email.com": {
+    summary:
+      "Data scientist experienced in predictive modeling, experimentation, and communicating actionable insights.",
+    skills: "Python, SQL, Machine learning, Tableau, Statistics",
+    experience:
+      "Developed forecasting models and analytics dashboards that helped product teams make faster, evidence-based decisions.",
+    education: "M.S. Data Science — San Francisco University",
+  },
+};
 
 function initials(name: string) {
   return name
@@ -25,6 +68,10 @@ function statusClasses(status: string) {
     return "border-blue-100 bg-blue-50 text-blue-700";
   }
 
+  if (status === "Pending") {
+    return "border-amber-100 bg-amber-50 text-amber-700";
+  }
+
   return "border-rose-100 bg-rose-50 text-rose-700";
 }
 
@@ -35,6 +82,10 @@ function statusDotClasses(status: string) {
 
   if (status === "In Review") {
     return "bg-blue-500";
+  }
+
+  if (status === "Pending") {
+    return "bg-amber-500";
   }
 
   return "bg-rose-500";
@@ -60,6 +111,12 @@ function ResumeModal({
   onClose: () => void;
 }) {
   const score = Number(resume?.score ?? 0);
+  const details = candidateResumeDetails[application.email] ?? {
+    summary: `${application.applicant} is an experienced ${application.job.toLowerCase()} focused on measurable results and collaborative delivery.`,
+    skills: "Communication, Collaboration, Problem solving, Project delivery",
+    experience: `Delivered relevant work across ${application.job.toLowerCase()} projects and partnered with cross-functional teams.`,
+    education: "Bachelor's degree",
+  };
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 backdrop-blur-md">
@@ -159,19 +216,46 @@ function ResumeModal({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-cyan-100 bg-white p-5">
-                <h3 className="text-lg font-black text-slate-950">
-                  Resume Preview
-                </h3>
-                <div className="mt-4 space-y-4 text-sm leading-6 text-slate-600">
-                  <p>
-                    {resume.candidate} is targeting {resume.role} roles with a
-                    resume focused on relevant skills, measurable impact, and
-                    ATS-ready formatting.
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <header className="border-b border-slate-200 pb-5 text-center">
+                  <h3 className="text-2xl font-black uppercase tracking-wide text-slate-950">
+                    {resume.candidate}
+                  </h3>
+                  <p className="mt-1 font-bold text-cyan-700">{resume.role}</p>
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    {resume.email} · {application.location}
                   </p>
-                  <p>
-                    Last updated on {resume.updated}. Uploaded on{" "}
-                    {resume.uploaded}.
+                </header>
+                <div className="mt-5 space-y-5 text-sm leading-6 text-slate-700">
+                  <section>
+                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                      Professional Summary
+                    </h4>
+                    <p className="mt-2">{details.summary}</p>
+                  </section>
+                  <section>
+                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                      Skills
+                    </h4>
+                    <p className="mt-2">{details.skills}</p>
+                  </section>
+                  <section>
+                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                      Experience
+                    </h4>
+                    <p className="mt-2 font-bold text-slate-900">
+                      {resume.role}
+                    </p>
+                    <p>{details.experience}</p>
+                  </section>
+                  <section>
+                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                      Education
+                    </h4>
+                    <p className="mt-2">{details.education}</p>
+                  </section>
+                  <p className="border-t border-slate-100 pt-3 text-xs font-semibold text-slate-400">
+                    Uploaded {resume.uploaded} · Last updated {resume.updated}
                   </p>
                 </div>
               </div>
@@ -196,13 +280,16 @@ export default function AdminApplicationsPage() {
     Object.fromEntries(
       applications.map((application) => [
         `${application.applicant}-${application.job}`,
-        (["Accepted", "Rejected"].includes(application.status)
+        (["Pending", "In Review", "Accepted", "Rejected"].includes(
+          application.status,
+        )
           ? application.status
-        : "In Review") as ApplicationStatus,
+          : "Pending") as ApplicationStatus,
       ]),
     ),
   );
   const statusValues = Object.values(applicationStatuses);
+  const pending = statusValues.filter((status) => status === "Pending").length;
   const inReview = statusValues.filter((status) => status === "In Review").length;
   const accepted = statusValues.filter((status) => status === "Accepted").length;
   const rejected = statusValues.filter((status) => status === "Rejected").length;
@@ -231,12 +318,16 @@ export default function AdminApplicationsPage() {
         </div>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5 shadow-sm shadow-slate-900/10">
           <p className="text-sm font-bold text-blue-600">Total Applications</p>
           <p className="mt-2 text-3xl font-black text-blue-700">
             {applications.length}
           </p>
+        </div>
+        <div className="rounded-3xl border border-amber-100 bg-amber-50 p-5 shadow-sm shadow-slate-900/10">
+          <p className="text-sm font-bold text-amber-700">Pending</p>
+          <p className="mt-2 text-3xl font-black text-amber-700">{pending}</p>
         </div>
         <div className="rounded-3xl border border-cyan-100 bg-cyan-50 p-5 shadow-sm shadow-slate-900/10">
           <p className="text-sm font-bold text-cyan-700">In Review</p>
@@ -275,7 +366,7 @@ export default function AdminApplicationsPage() {
               {applications.map((application) => {
                 const applicationKey = `${application.applicant}-${application.job}`;
                 const currentStatus =
-                  applicationStatuses[applicationKey] ?? "In Review";
+                  applicationStatuses[applicationKey] ?? "Pending";
 
                 return (
                   <tr
@@ -354,6 +445,7 @@ export default function AdminApplicationsPage() {
                           }))
                         }
                       >
+                        <option value="Pending">Pending</option>
                         <option value="In Review">In Review</option>
                         <option value="Accepted">Accepted</option>
                         <option value="Rejected">Rejected</option>
@@ -377,7 +469,7 @@ export default function AdminApplicationsPage() {
           status={
             applicationStatuses[
               `${selectedApplication.applicant}-${selectedApplication.job}`
-            ] ?? "In Review"
+            ] ?? "Pending"
           }
           onClose={() => setSelectedApplication(null)}
         />
