@@ -90,13 +90,42 @@ export default function AddJobPage() {
               <option>Contract</option>
               <option>Internship</option>
               <option>Remote</option>
+              <option>Hybrid</option>
             </select>
           </label>
+          <label className="block text-sm font-bold text-slate-800">
+            Apply by
+            <input
+              type="date"
+              className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+            />
+          </label>
           <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
-            Description
+            Job description
             <textarea
               className="mt-2 min-h-36 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-              placeholder="Describe the role, responsibilities, requirements, and interview process."
+              placeholder="Describe the role and what the candidate will work on."
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
+            Responsibilities
+            <textarea
+              className="mt-2 min-h-32 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              placeholder={"Enter each responsibility on a new line"}
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
+            Requirements
+            <textarea
+              className="mt-2 min-h-32 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              placeholder={"Enter each requirement on a new line"}
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
+            Benefits
+            <textarea
+              className="mt-2 min-h-28 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              placeholder={"Enter each benefit on a new line"}
             />
           </label>
           <div className="lg:col-span-2">
