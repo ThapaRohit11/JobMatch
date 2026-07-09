@@ -2,7 +2,6 @@ import {
   adminStats,
   recentApplications,
   recentJobPosts,
-  recentSignups,
 } from "./admin-data";
 import { Card } from "./components";
 
@@ -11,22 +10,43 @@ const activityGroups = [
     title: "Recent Job Posts",
     description: "Newest roles added by companies",
     items: recentJobPosts,
-    accent: "bg-cyan-100 text-cyan-700",
-    marker: "JP",
+    accent: "from-cyan-500 to-blue-600 shadow-cyan-500/20",
+    icon: (
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect width="20" height="14" x="2" y="7" rx="2" />
+        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M2 12h20M10 12v2h4v-2" />
+      </svg>
+    ),
   },
   {
     title: "Recent Applications",
     description: "Latest candidates applying to jobs",
     items: recentApplications,
-    accent: "bg-emerald-100 text-emerald-700",
-    marker: "AP",
-  },
-  {
-    title: "Recent Signups",
-    description: "Newest users joining JobMatch",
-    items: recentSignups,
-    accent: "bg-indigo-100 text-indigo-700",
-    marker: "SU",
+    accent: "from-emerald-500 to-teal-600 shadow-emerald-500/20",
+    icon: (
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 2v6h6M9 13h6M9 17h4" />
+      </svg>
+    ),
   },
 ];
 
@@ -34,17 +54,60 @@ const statStyles = [
   {
     panel: "from-cyan-50 to-white",
     badge: "bg-cyan-600",
-    code: "US",
+    icon: (
+      <svg
+        aria-hidden="true"
+        className="h-6 w-6"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
   },
   {
     panel: "from-indigo-50 to-white",
     badge: "bg-indigo-600",
-    code: "JB",
+    icon: (
+      <svg
+        aria-hidden="true"
+        className="h-6 w-6"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect width="20" height="14" x="2" y="7" rx="2" />
+        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M2 12h20M10 12v2h4v-2" />
+      </svg>
+    ),
   },
   {
     panel: "from-emerald-50 to-white",
     badge: "bg-emerald-600",
-    code: "AP",
+    icon: (
+      <svg
+        aria-hidden="true"
+        className="h-6 w-6"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 2v6h6M9 13h6M9 17h6" />
+      </svg>
+    ),
   },
 ];
 
@@ -92,7 +155,7 @@ export default function AdminDashboardPage() {
               <span
                 className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-xs font-black text-white shadow-lg shadow-slate-900/10 ${statStyles[index].badge}`}
               >
-                {statStyles[index].code}
+                {statStyles[index].icon}
               </span>
             </div>
             <p className="mt-4 rounded-full bg-white/80 px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-cyan-100/70">
@@ -102,32 +165,51 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-4 xl:grid-cols-2">
         {activityGroups.map((group) => (
-          <Card key={group.title} className="flex min-h-full flex-col">
-            <div className="flex items-start justify-between gap-4">
+          <Card
+            key={group.title}
+            className="flex min-h-full flex-col overflow-hidden border-cyan-100/80"
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
               <div>
-                <h2 className="text-lg font-black">{group.title}</h2>
+                <h2 className="text-xl font-black text-slate-950">
+                  {group.title}
+                </h2>
                 <p className="mt-1 text-xs font-semibold text-slate-500">
                   {group.description}
                 </p>
               </div>
               <span
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-xs font-black ${group.accent}`}
+                className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-lg ${group.accent}`}
               >
-                {group.marker}
+                {group.icon}
               </span>
             </div>
-            <div className="mt-5 divide-y divide-cyan-50">
+            <div className="mt-2 divide-y divide-cyan-50">
               {group.items.map((activity, index) => (
                 <div
                   key={activity}
-                  className="flex items-start gap-4 py-4 text-sm font-semibold leading-6 text-slate-700 first:pt-0 last:pb-0"
+                  className="group flex items-start gap-4 rounded-xl px-2 py-4 text-sm font-semibold leading-6 text-slate-700 transition hover:bg-slate-50"
                 >
-                  <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-black text-slate-600">
-                    {index + 1}
+                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-50 text-cyan-700 transition group-hover:bg-cyan-100">
+                    <svg
+                      aria-hidden="true"
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
                   </span>
-                  <span>{activity}</span>
+                  <span className="flex-1">{activity}</span>
+                  <span className="mt-1 text-xs font-black text-slate-300">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                 </div>
               ))}
             </div>
