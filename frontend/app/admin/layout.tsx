@@ -191,24 +191,6 @@ export default function AdminLayout({
       <div className="lg:pl-72">
         <header className="sticky top-0 z-30 border-b border-cyan-100/80 bg-white/85 backdrop-blur-xl">
           <div className="flex h-20 items-center justify-end gap-4 px-6">
-            <button
-              aria-label="Notifications"
-              className="grid h-11 w-11 place-items-center rounded-full border border-cyan-100 bg-white text-cyan-700 shadow-sm transition hover:bg-cyan-50"
-            >
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </button>
             <div className="hidden items-center gap-3 rounded-full border border-cyan-100 bg-white px-3 py-2 shadow-sm sm:flex">
               <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-indigo-600 text-xs font-black text-white">
                 AD
