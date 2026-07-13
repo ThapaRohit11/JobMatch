@@ -16,6 +16,7 @@ const resumeSchema = new mongoose.Schema(
     portfolio: { type: String, default: "", trim: true },
     github: { type: String, default: "", trim: true },
     score: { type: Number, default: 0 },
+    analysis: { type: mongoose.Schema.Types.Mixed, default: null },
     role: { type: String, required: true, trim: true },
     status: {
       type: String,
