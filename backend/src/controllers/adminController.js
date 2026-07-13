@@ -4,7 +4,7 @@ import Job from "../models/Job.js";
 import Resume from "../models/Resume.js";
 import User from "../models/User.js";
 import { formatDate } from "../utils/formatDate.js";
-import { analyzeResume } from "../utils/resumeAnalysis.js";
+import { analyzeResume, automaticReviewStatus } from "../utils/resumeAnalysis.js";
 
 function jobView(job) {
   return {
@@ -51,6 +51,9 @@ function experienceView(value) {
 
 function resumeView(resume) {
   const analysis = analyzeResume(resume);
+  const status = resume.status === "Pending"
+    ? automaticReviewStatus(analysis.score)
+    : resume.status;
   return {
     id: resume._id,
     candidate: resume.candidate,
@@ -60,7 +63,7 @@ function resumeView(resume) {
     score: String(analysis.score),
     analysis,
     role: resume.role,
-    status: resume.status,
+    status,
     revisionNotes: resume.revisionNotes,
     contactEmail: resume.contactEmail || resume.email,
     phone: resume.phone,
@@ -309,6 +312,17 @@ export async function updateApplication(req, res, next) {
 export async function getResumes(req, res, next) {
   try {
     const resumes = await Resume.find().sort({ updatedAt: -1 });
+    await Promise.all(
+      resumes
+        .filter((resume) => resume.status === "Pending")
+        .map((resume) => {
+          const analysis = analyzeResume(resume);
+          resume.score = analysis.score;
+          resume.analysis = analysis;
+          resume.status = automaticReviewStatus(analysis.score);
+          return resume.save();
+        }),
+    );
     return res.json({ success: true, resumes: resumes.map(resumeView) });
   } catch (error) {
     return next(error);
