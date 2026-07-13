@@ -53,6 +53,7 @@ export type AdminResume = {
     breakdown: Record<string, number>;
     strengths: string[];
     improvements: string[];
+    recommendations?: Array<{ title: string; message: string }>;
   };
   role: string;
   status: "Reviewed" | "Needs Revision" | "Pending";
