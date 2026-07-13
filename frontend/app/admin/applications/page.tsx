@@ -100,11 +100,17 @@ function statusDotClasses(status: string) {
 }
 
 function scoreColor(score: number) {
-  return score >= 85 ? "text-emerald-600" : "text-blue-600";
+  if (score >= 80) return "text-emerald-600";
+  if (score >= 70) return "text-blue-600";
+  if (score >= 60) return "text-amber-600";
+  return "text-rose-600";
 }
 
 function scoreBarColor(score: number) {
-  return score >= 85 ? "bg-emerald-500" : "bg-blue-600";
+  if (score >= 80) return "bg-emerald-500";
+  if (score >= 70) return "bg-blue-500";
+  if (score >= 60) return "bg-amber-500";
+  return "bg-rose-500";
 }
 
 function ResumeModal({
@@ -211,6 +217,11 @@ function ResumeModal({
                     </span>{" "}
                     <span className="text-base font-medium">/100</span>
                   </p>
+                  {resume.analysis && (
+                    <span className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-slate-700">
+                      {resume.analysis.label}
+                    </span>
+                  )}
                   <span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-700">
                     {resume.role}
                   </span>
