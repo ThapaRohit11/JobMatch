@@ -3,8 +3,10 @@ import Job from "../models/Job.js";
 import Resume from "../models/Resume.js";
 import User from "../models/User.js";
 import { formatDate } from "../utils/formatDate.js";
+import { analyzeResume } from "../utils/resumeAnalysis.js";
 
 function profileView(user, resume) {
+  const analysis = resume ? analyzeResume(resume) : null;
   return {
     id: user._id,
     name: user.name,
@@ -12,7 +14,8 @@ function profileView(user, resume) {
     role: user.professionalRole || "",
     location: user.location || "",
     joined: formatDate(user.createdAt),
-    resumeScore: resume?.score || 0,
+    resumeScore: analysis?.score || 0,
+    resumeLabel: analysis?.label || "No resume",
     skills: user.skills || "",
   };
 }
@@ -103,6 +106,7 @@ function applicationView(application, jobDetails = null) {
 }
 
 function resumeView(resume, user) {
+  const analysis = resume ? analyzeResume(resume) : null;
   return {
     id: resume?._id || "",
     summary: resume?.summary || "",
@@ -124,7 +128,8 @@ function resumeView(resume, user) {
         : [],
     certifications: resume?.certifications || [],
     awards: resume?.awards || [],
-    score: resume?.score || 0,
+    score: analysis?.score || 0,
+    analysis,
     role: user.professionalRole || "",
     status: resume?.status || "Pending",
   };
@@ -154,12 +159,12 @@ export async function getUserDashboard(req, res, next) {
       profile: profileView(req.user, resume),
       jobMatches,
       applications: applications.map(applicationView),
-      resumeTips: resume?.revisionNotes
-        ? resume.revisionNotes
-            .split("\n")
-            .map((tip) => tip.trim())
-            .filter(Boolean)
-        : [],
+      resumeTips: [
+        ...(resume ? analyzeResume(resume).improvements : []),
+        ...(resume?.revisionNotes
+          ? resume.revisionNotes.split("\n").map((tip) => tip.trim()).filter(Boolean)
+          : []),
+      ],
     });
   } catch (error) {
     return next(error);
@@ -338,7 +343,6 @@ export async function saveUserResume(req, res, next) {
       portfolio: req.body.portfolio || "",
       github: req.body.github || "",
       role: req.user.professionalRole || "Not specified",
-      score: 75,
       status: "Pending",
       summary: req.body.summary || "",
       skills: req.body.skills || "",
@@ -358,6 +362,9 @@ export async function saveUserResume(req, res, next) {
         ? req.body.awards.filter(Boolean)
         : [],
     };
+    const analysis = analyzeResume(payload);
+    payload.score = analysis.score;
+    payload.analysis = analysis;
     let resume = await findUserResume(req.user);
 
     if (resume) {
