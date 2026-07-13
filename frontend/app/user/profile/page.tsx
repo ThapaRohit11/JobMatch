@@ -15,7 +15,8 @@ const emptyProfile: UserProfile = {
   role: "",
   location: "",
   joined: "",
-  resumeScore: 0,
+    resumeScore: 0,
+    resumeLabel: "No resume",
   skills: "",
 };
 
