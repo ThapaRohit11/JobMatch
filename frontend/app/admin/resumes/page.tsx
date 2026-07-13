@@ -20,11 +20,17 @@ function initials(name: string) {
 }
 
 function scoreColor(score: number) {
-  return score >= 85 ? "text-emerald-600" : "text-blue-600";
+  if (score >= 80) return "text-emerald-600";
+  if (score >= 70) return "text-blue-600";
+  if (score >= 60) return "text-amber-600";
+  return "text-rose-600";
 }
 
 function scoreBarColor(score: number) {
-  return score >= 85 ? "bg-emerald-500" : "bg-blue-600";
+  if (score >= 80) return "bg-emerald-500";
+  if (score >= 70) return "bg-blue-500";
+  if (score >= 60) return "bg-amber-500";
+  return "bg-rose-500";
 }
 
 function statusClasses(status: string) {
@@ -161,6 +167,21 @@ function ResumePreviewModal({
                 style={{ width: `${score}%` }}
               />
             </div>
+            {resume.analysis && (
+              <div className="mt-4 border-t border-slate-200 pt-4">
+                <p className="font-black text-slate-900">{resume.analysis.label}</p>
+                <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
+                  {resume.analysis.summary}
+                </p>
+                {resume.analysis.improvements.length > 0 && (
+                  <ul className="mt-3 grid gap-2 text-sm font-semibold text-slate-700">
+                    {resume.analysis.improvements.map((item) => (
+                      <li key={item} className="rounded-xl bg-white px-3 py-2">{item}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -472,6 +493,11 @@ export default function AdminResumesPage() {
                           </span>{" "}
                           /100
                         </p>
+                        {resume.analysis && (
+                          <p className="mt-1 text-xs font-bold text-slate-500">
+                            {resume.analysis.label}
+                          </p>
+                        )}
                         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                           <div
                             className={`h-full rounded-full ${scoreBarColor(score)}`}
@@ -542,7 +568,7 @@ export default function AdminResumesPage() {
                               aria-label={`Revision notes for ${resume.candidate}`}
                               className="min-h-20 rounded-xl border border-orange-100 bg-orange-50/60 px-3 py-2 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
                               placeholder="Add revision notes for the candidate..."
-                              value={revisionNotes[resume.candidate] ?? ""}
+                              value={revisionNotes[resume.id] ?? ""}
                               onChange={async (event) => {
                                 const notes = event.target.value;
                                 setRevisionNotes((current) => ({
