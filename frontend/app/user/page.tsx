@@ -1,10 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
-  jobMatches,
-  resumeTips,
-  userApplications,
-  userProfile,
-} from "./user-data";
+  getUserDashboard,
+  UserApplication,
+  UserJob,
+  UserProfile,
+} from "../../lib/user-api";
 
 function statusClasses(status: string) {
   if (status === "Accepted") {
@@ -23,6 +26,31 @@ function statusClasses(status: string) {
 }
 
 export default function UserDashboardPage() {
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    id: "",
+    name: "",
+    email: "",
+    role: "",
+    location: "",
+    joined: "",
+    resumeScore: 0,
+    skills: "",
+  });
+  const [jobMatches, setJobMatches] = useState<UserJob[]>([]);
+  const [userApplications, setUserApplications] = useState<UserApplication[]>([]);
+  const [resumeTips, setResumeTips] = useState<string[]>([]);
+
+  useEffect(() => {
+    getUserDashboard().then((data) => {
+      setUserProfile(data.profile);
+      setJobMatches(data.jobMatches);
+      setUserApplications(data.applications);
+      setResumeTips(
+        (data.resumeTips ?? []).filter((tip: string) => tip.trim()),
+      );
+    });
+  }, []);
+
   const accepted = userApplications.filter(
     (application) => application.status === "Accepted",
   ).length;
@@ -113,7 +141,7 @@ export default function UserDashboardPage() {
           </div>
           <div className="divide-y divide-slate-100">
             {jobMatches.map((job) => (
-              <div key={job.title} className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+              <div key={job.id} className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-600 to-indigo-600 text-xs font-black text-white">
                     {job.logo}
@@ -131,12 +159,26 @@ export default function UserDashboardPage() {
                   <span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-700">
                     {job.match}% match
                   </span>
-                  <span className="rounded-full bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600">
-                    {job.salary}
-                  </span>
                 </div>
               </div>
             ))}
+            {jobMatches.length === 0 && (
+              <div className="p-6 text-center">
+                <p className="font-black text-slate-800">
+                  No jobs match your title and skills yet
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  Keep your target job title and skills updated in your
+                  profile to receive recommendations.
+                </p>
+                <Link
+                  href="/user/profile"
+                  className="mt-4 inline-flex h-10 items-center rounded-full bg-cyan-600 px-5 text-sm font-bold text-white transition hover:bg-cyan-700"
+                >
+                  Update Profile
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -148,6 +190,11 @@ export default function UserDashboardPage() {
                 {tip}
               </div>
             ))}
+            {resumeTips.length === 0 && (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
+                No resume tips have been provided yet.
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -160,7 +207,7 @@ export default function UserDashboardPage() {
         </div>
         <div className="divide-y divide-slate-100">
           {userApplications.slice(0, 3).map((application) => (
-            <div key={application.title} className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div key={application.id} className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-black text-slate-950">
                   {application.title}
