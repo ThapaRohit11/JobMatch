@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { companies, jobs } from "../admin-data";
+import { FormEvent, useEffect, useState } from "react";
+import {
+  AdminCompany,
+  AdminJob,
+  createAdminCompany,
+  deleteAdminCompany,
+  getAdminCompanies,
+  getAdminJobs,
+  updateAdminCompany,
+} from "../../../lib/admin-api";
 
-type Company = (typeof companies)[number];
+type Company = AdminCompany;
+type Job = AdminJob;
 
 function BackButton({ onClick }: { onClick: () => void }) {
   return (
@@ -32,11 +41,30 @@ function BackButton({ onClick }: { onClick: () => void }) {
 function CompanyForm({
   company,
   onBack,
+  onSaved,
 }: {
   company?: Company;
   onBack: () => void;
+  onSaved: (company: Company) => void;
 }) {
   const isEditing = Boolean(company);
+  const [message, setMessage] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: String(formData.get("name") || ""),
+      industry: String(formData.get("industry") || ""),
+      location: String(formData.get("location") || ""),
+    };
+    const data = company
+      ? await updateAdminCompany(company.id, payload)
+      : await createAdminCompany(payload);
+
+    onSaved(data.company);
+    setMessage(isEditing ? "Company updated successfully" : "Company added successfully");
+  }
 
   return (
     <div className="space-y-6">
@@ -55,31 +83,42 @@ function CompanyForm({
       </div>
 
       <section className="rounded-2xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-cyan-900/5">
-        <form className="grid gap-5 lg:grid-cols-2">
+        <form className="grid gap-5 lg:grid-cols-2" onSubmit={handleSubmit}>
           <label className="block text-sm font-bold text-slate-800">
             Company name
             <input
+              name="name"
               className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
               defaultValue={company?.name}
               placeholder="Company name"
+              required
             />
           </label>
           <label className="block text-sm font-bold text-slate-800">
             Industry
             <input
+              name="industry"
               className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
               defaultValue={company?.industry}
               placeholder="Industry"
+              required
             />
           </label>
           <label className="block text-sm font-bold text-slate-800">
             Location
             <input
+              name="location"
               className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
               defaultValue={company?.location}
               placeholder="Location"
+              required
             />
           </label>
+          {message && (
+            <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 lg:col-span-2">
+              {message}
+            </p>
+          )}
           <div className="flex flex-wrap gap-3 lg:col-span-2">
             <button className="h-12 rounded-full bg-cyan-600 px-7 text-sm font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:bg-cyan-700">
               {isEditing ? "Save Changes" : "Add Company"}
@@ -101,9 +140,11 @@ function CompanyForm({
 function DeleteCompanyModal({
   company,
   onCancel,
+  onConfirm,
 }: {
   company: Company;
   onCancel: () => void;
+  onConfirm: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 backdrop-blur-md">
@@ -148,7 +189,7 @@ function DeleteCompanyModal({
           </button>
           <button
             className="h-11 rounded-full bg-rose-600 px-5 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700"
-            onClick={onCancel}
+            onClick={onConfirm}
           >
             Confirm Delete
           </button>
@@ -159,12 +200,31 @@ function DeleteCompanyModal({
 }
 
 export default function AdminCompaniesPage() {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [isAddingCompany, setIsAddingCompany] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
 
+  useEffect(() => {
+    Promise.all([getAdminCompanies(), getAdminJobs()]).then(
+      ([companiesData, jobsData]) => {
+        setCompanies(companiesData.companies);
+        setJobs(jobsData.jobs);
+      },
+    );
+  }, []);
+
   if (isAddingCompany) {
-    return <CompanyForm onBack={() => setIsAddingCompany(false)} />;
+    return (
+      <CompanyForm
+        onBack={() => setIsAddingCompany(false)}
+        onSaved={(company) => {
+          setCompanies((current) => [company, ...current]);
+          setIsAddingCompany(false);
+        }}
+      />
+    );
   }
 
   if (editingCompany) {
@@ -172,6 +232,14 @@ export default function AdminCompaniesPage() {
       <CompanyForm
         company={editingCompany}
         onBack={() => setEditingCompany(null)}
+        onSaved={(updatedCompany) => {
+          setCompanies((current) =>
+            current.map((company) =>
+              company.id === updatedCompany.id ? updatedCompany : company,
+            ),
+          );
+          setEditingCompany(null);
+        }}
       />
     );
   }
@@ -244,7 +312,7 @@ export default function AdminCompaniesPage() {
                 ).length;
 
                 return (
-                  <tr key={company.name} className="transition hover:bg-cyan-50/35">
+                  <tr key={company.id} className="transition hover:bg-cyan-50/35">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-600 to-indigo-600 text-xs font-black text-white">
@@ -339,6 +407,13 @@ export default function AdminCompaniesPage() {
         <DeleteCompanyModal
           company={deletingCompany}
           onCancel={() => setDeletingCompany(null)}
+          onConfirm={async () => {
+            await deleteAdminCompany(deletingCompany.id);
+            setCompanies((current) =>
+              current.filter((company) => company.id !== deletingCompany.id),
+            );
+            setDeletingCompany(null);
+          }}
         />
       )}
     </div>
