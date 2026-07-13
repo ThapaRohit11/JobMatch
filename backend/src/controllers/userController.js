@@ -3,7 +3,7 @@ import Job from "../models/Job.js";
 import Resume from "../models/Resume.js";
 import User from "../models/User.js";
 import { formatDate } from "../utils/formatDate.js";
-import { analyzeResume } from "../utils/resumeAnalysis.js";
+import { analyzeResume, automaticReviewStatus } from "../utils/resumeAnalysis.js";
 
 function profileView(user, resume) {
   const analysis = resume ? analyzeResume(resume) : null;
@@ -131,13 +131,69 @@ function resumeView(resume, user) {
     score: analysis?.score || 0,
     analysis,
     role: user.professionalRole || "",
-    status: resume?.status || "Pending",
+    status: resume
+      ? resume.status === "Pending"
+        ? automaticReviewStatus(analysis.score)
+        : resume.status
+      : "Pending",
   };
 }
 
 async function findUserResume(user) {
   const resumeByUser = await Resume.findOne({ user: user._id });
   return resumeByUser || Resume.findOne({ email: user.email });
+}
+
+function reviewHistoryView(resume) {
+  if (!resume) return [];
+
+  const currentAnalysis = analyzeResume(resume);
+  const storedHistory = Array.isArray(resume.reviewHistory) && resume.reviewHistory.length
+    ? resume.reviewHistory
+    : [{
+        reviewedAt: resume.updatedAt || resume.createdAt,
+        score: currentAnalysis.score,
+        label: currentAnalysis.label,
+        status: resume.status === "Pending"
+          ? automaticReviewStatus(currentAnalysis.score)
+          : resume.status,
+        recommendations: currentAnalysis.recommendations,
+      }];
+  const reviews = storedHistory
+    .map((review, index) => {
+      const score = Number(review.score) || 0;
+      const recommendations = Array.isArray(review.recommendations) && review.recommendations.length
+        ? review.recommendations
+        : [{
+            title: "Tailor each application",
+            message: "This review found no major missing sections. Keep tailoring your summary and skills to each job description and preserve measurable evidence of your results.",
+          }];
+
+      return {
+        id: `${new Date(review.reviewedAt || resume.updatedAt).getTime()}-${index}`,
+        title: `Review ${index + 1}`,
+        reviewedAt: review.reviewedAt || resume.updatedAt,
+        reviewedDate: formatDate(review.reviewedAt || resume.updatedAt),
+        score,
+        label: review.label || "Needs improvement",
+        status: review.status || automaticReviewStatus(score),
+        recommendations,
+      };
+    })
+    .reverse();
+
+  if (reviews.length && resume.revisionNotes) {
+    reviews[0].recommendations = [
+      ...reviews[0].recommendations,
+      ...resume.revisionNotes
+        .split("\n")
+        .map((message) => message.trim())
+        .filter(Boolean)
+        .map((message) => ({ title: "Reviewer note", message })),
+    ];
+  }
+
+  return reviews;
 }
 
 export async function getUserDashboard(req, res, next) {
@@ -159,12 +215,7 @@ export async function getUserDashboard(req, res, next) {
       profile: profileView(req.user, resume),
       jobMatches,
       applications: applications.map(applicationView),
-      resumeTips: [
-        ...(resume ? analyzeResume(resume).improvements : []),
-        ...(resume?.revisionNotes
-          ? resume.revisionNotes.split("\n").map((tip) => tip.trim()).filter(Boolean)
-          : []),
-      ],
+      resumeReviews: reviewHistoryView(resume),
     });
   } catch (error) {
     return next(error);
@@ -365,7 +416,18 @@ export async function saveUserResume(req, res, next) {
     const analysis = analyzeResume(payload);
     payload.score = analysis.score;
     payload.analysis = analysis;
+    payload.status = automaticReviewStatus(analysis.score);
     let resume = await findUserResume(req.user);
+    const reviewEntry = {
+      reviewedAt: new Date(),
+      score: analysis.score,
+      label: analysis.label,
+      status: payload.status,
+      recommendations: analysis.recommendations,
+    };
+    payload.reviewHistory = resume?.reviewHistory?.length
+      ? [...resume.reviewHistory, reviewEntry]
+      : [reviewEntry];
 
     if (resume) {
       Object.assign(resume, payload);
