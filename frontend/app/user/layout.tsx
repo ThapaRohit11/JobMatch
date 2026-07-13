@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getUserProfile, UserProfile } from "../../lib/user-api";
 
 const links = [
   { href: "/user", label: "Dashboard" },
@@ -19,6 +20,23 @@ export default function UserLayout({
 }>) {
   const pathname = usePathname();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const initials = useMemo(
+    () =>
+      profile?.name
+        ?.split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toUpperCase())
+        .join("") || "US",
+    [profile],
+  );
+
+  useEffect(() => {
+    getUserProfile()
+      .then((data) => setProfile(data.profile))
+      .catch(() => setProfile(null));
+  }, []);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(135deg,#ecfeff_0%,#f8fafc_45%,#eef2ff_100%)] text-slate-950">
@@ -87,11 +105,11 @@ export default function UserLayout({
             </Link>
             <div className="ml-auto flex items-center gap-3 rounded-full border border-cyan-100 bg-white px-3 py-2 shadow-sm">
               <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-indigo-600 text-xs font-black text-white">
-                JS
+                {initials}
               </div>
               <div className="hidden text-sm sm:block">
-                <p className="font-bold">John Smith</p>
-                <p className="text-xs text-slate-500">john.smith@email.com</p>
+                <p className="font-bold">{profile?.name || ""}</p>
+                <p className="text-xs text-slate-500">{profile?.email || ""}</p>
               </div>
             </div>
           </div>
