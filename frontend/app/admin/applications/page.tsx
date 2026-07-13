@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { applications, resumes } from "../admin-data";
+import { useEffect, useState } from "react";
+import {
+  AdminApplication,
+  AdminResume,
+  getAdminApplications,
+  getAdminResumes,
+  updateAdminApplication,
+} from "../../../lib/admin-api";
 
-type Application = (typeof applications)[number];
+type Application = AdminApplication;
 type ApplicationStatus = "Pending" | "In Review" | "Accepted" | "Rejected";
-type Resume = (typeof resumes)[number];
+type Resume = AdminResume;
 
+/* Legacy placeholder resume data retained only for migration reference.
 const candidateResumeDetails: Record<
   string,
   {
@@ -49,6 +56,7 @@ const candidateResumeDetails: Record<
     education: "M.S. Data Science — San Francisco University",
   },
 };
+*/
 
 function initials(name: string) {
   return name
@@ -111,12 +119,11 @@ function ResumeModal({
   onClose: () => void;
 }) {
   const score = Number(resume?.score ?? 0);
-  const details = candidateResumeDetails[application.email] ?? {
-    summary: `${application.applicant} is an experienced ${application.job.toLowerCase()} focused on measurable results and collaborative delivery.`,
-    skills: "Communication, Collaboration, Problem solving, Project delivery",
-    experience: `Delivered relevant work across ${application.job.toLowerCase()} projects and partnered with cross-functional teams.`,
-    education: "Bachelor's degree",
-  };
+  const experiences = resume?.experience ?? [];
+  const projects = resume?.projects ?? [];
+  const educationEntries = resume?.educationEntries ?? [];
+  const certifications = resume?.certifications ?? [];
+  const awards = resume?.awards ?? [];
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 backdrop-blur-md">
@@ -125,7 +132,7 @@ function ResumeModal({
         className="absolute inset-0 cursor-default"
         onClick={onClose}
       />
-      <section className="relative z-10 flex max-h-[82vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/20">
+      <section className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/20">
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div className="flex min-w-0 items-center gap-4">
             <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-indigo-600 text-lg font-black text-white">
@@ -222,38 +229,153 @@ function ResumeModal({
                     {resume.candidate}
                   </h3>
                   <p className="mt-1 font-bold text-cyan-700">{resume.role}</p>
-                  <p className="mt-2 text-sm font-medium text-slate-500">
+                  <p className="hidden">
                     {resume.email} · {application.location}
                   </p>
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    {[
+                      resume.contactEmail || resume.email,
+                      resume.phone,
+                      resume.location || application.location,
+                    ]
+                      .filter(Boolean)
+                      .join(" | ")}
+                  </p>
+                  {(resume.portfolio || resume.github) && (
+                    <p className="mt-1 text-sm font-medium text-slate-500">
+                      {[resume.portfolio, resume.github]
+                        .filter(Boolean)
+                        .join(" | ")}
+                    </p>
+                  )}
                 </header>
                 <div className="mt-5 space-y-5 text-sm leading-6 text-slate-700">
-                  <section>
-                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
-                      Professional Summary
-                    </h4>
-                    <p className="mt-2">{details.summary}</p>
-                  </section>
-                  <section>
-                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
-                      Skills
-                    </h4>
-                    <p className="mt-2">{details.skills}</p>
-                  </section>
-                  <section>
-                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
-                      Experience
-                    </h4>
-                    <p className="mt-2 font-bold text-slate-900">
-                      {resume.role}
-                    </p>
-                    <p>{details.experience}</p>
-                  </section>
-                  <section>
-                    <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
-                      Education
-                    </h4>
-                    <p className="mt-2">{details.education}</p>
-                  </section>
+                  {resume.summary && (
+                    <section>
+                      <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                        Professional Summary
+                      </h4>
+                      <p className="mt-2 whitespace-pre-line">{resume.summary}</p>
+                    </section>
+                  )}
+
+                  {(resume.skills || resume.softSkills) && (
+                    <section>
+                      <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                        Skills
+                      </h4>
+                      {resume.skills && (
+                        <p className="mt-2">
+                          <span className="font-bold text-slate-900">Technical skills:</span>{" "}
+                          {resume.skills}
+                        </p>
+                      )}
+                      {resume.softSkills && (
+                        <p className="mt-1">
+                          <span className="font-bold text-slate-900">Soft skills:</span>{" "}
+                          {resume.softSkills}
+                        </p>
+                      )}
+                    </section>
+                  )}
+
+                  {experiences.length > 0 && (
+                    <section>
+                      <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                        Experience
+                      </h4>
+                      <div className="mt-3 space-y-4">
+                        {experiences.map((item, index) => (
+                          <div key={`${item.role}-${item.company}-${index}`}>
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                              <div>
+                                {item.role && <p className="font-black text-slate-950">{item.role}</p>}
+                                {item.company && <p className="font-bold text-slate-600">{item.company}</p>}
+                              </div>
+                              {(item.period || item.location) && (
+                                <p className="shrink-0 font-bold text-slate-500">
+                                  {[item.period, item.location].filter(Boolean).join(" | ")}
+                                </p>
+                              )}
+                            </div>
+                            {item.detail && (
+                              <p className="mt-2 whitespace-pre-line">{item.detail}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {projects.length > 0 && (
+                    <section>
+                      <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                        Projects
+                      </h4>
+                      <ul className="mt-2 list-disc space-y-2 pl-5">
+                        {projects.map((project, index) => (
+                          <li key={`${project}-${index}`} className="whitespace-pre-line">
+                            {project}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {educationEntries.length > 0 && (
+                    <section>
+                      <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                        Education
+                      </h4>
+                      <div className="mt-3 space-y-4">
+                        {educationEntries.map((item, index) => (
+                          <div
+                            key={`${item.school}-${item.degree}-${index}`}
+                            className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+                          >
+                            <div>
+                              {item.school && <p className="font-black text-slate-950">{item.school}</p>}
+                              {item.degree && <p className="font-semibold text-slate-600">{item.degree}</p>}
+                            </div>
+                            <div className="shrink-0 sm:text-right">
+                              {(item.started || item.graduation) && (
+                                <p className="font-bold text-slate-500">
+                                  {[item.started, item.graduation].filter(Boolean).join(" - ")}
+                                </p>
+                              )}
+                              {item.gpa && <p className="text-xs font-semibold text-slate-500">{item.gpa}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {certifications.length > 0 && (
+                    <section>
+                      <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                        Certifications
+                      </h4>
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        {certifications.map((certification, index) => (
+                          <li key={`${certification}-${index}`}>{certification}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {awards.length > 0 && (
+                    <section>
+                      <h4 className="border-b border-slate-200 pb-1 font-black uppercase tracking-wide text-slate-950">
+                        Awards / Achievements
+                      </h4>
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        {awards.map((award, index) => (
+                          <li key={`${award}-${index}`}>{award}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
                   <p className="border-t border-slate-100 pt-3 text-xs font-semibold text-slate-400">
                     Uploaded {resume.uploaded} · Last updated {resume.updated}
                   </p>
@@ -272,22 +394,30 @@ function ResumeModal({
 }
 
 export default function AdminApplicationsPage() {
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [resumes, setResumes] = useState<Resume[]>([]);
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
   const [applicationStatuses, setApplicationStatuses] = useState<
     Record<string, ApplicationStatus>
-  >(() =>
-    Object.fromEntries(
-      applications.map((application) => [
-        `${application.applicant}-${application.job}`,
-        (["Pending", "In Review", "Accepted", "Rejected"].includes(
-          application.status,
-        )
-          ? application.status
-          : "Pending") as ApplicationStatus,
-      ]),
-    ),
-  );
+  >({});
+
+  useEffect(() => {
+    Promise.all([getAdminApplications(), getAdminResumes()]).then(
+      ([applicationsData, resumesData]) => {
+        setApplications(applicationsData.applications);
+        setResumes(resumesData.resumes);
+        setApplicationStatuses(
+          Object.fromEntries(
+            applicationsData.applications.map((application: Application) => [
+              application.id,
+              application.status,
+            ]),
+          ),
+        );
+      },
+    );
+  }, []);
   const statusValues = Object.values(applicationStatuses);
   const pending = statusValues.filter((status) => status === "Pending").length;
   const inReview = statusValues.filter((status) => status === "In Review").length;
@@ -364,7 +494,7 @@ export default function AdminApplicationsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {applications.map((application) => {
-                const applicationKey = `${application.applicant}-${application.job}`;
+                const applicationKey = application.id;
                 const currentStatus =
                   applicationStatuses[applicationKey] ?? "Pending";
 
@@ -437,13 +567,19 @@ export default function AdminApplicationsPage() {
                         aria-label={`Update ${application.applicant} application status`}
                         className="h-10 w-32 rounded-xl border border-cyan-100 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                         value={currentStatus}
-                        onChange={(event) =>
+                        onChange={async (event) => {
+                          const status = event.target.value as ApplicationStatus;
                           setApplicationStatuses((current) => ({
                             ...current,
-                            [applicationKey]: event.target
-                              .value as ApplicationStatus,
-                          }))
-                        }
+                            [applicationKey]: status,
+                          }));
+                          const data = await updateAdminApplication(application.id, status);
+                          setApplications((current) =>
+                            current.map((item) =>
+                              item.id === data.application.id ? data.application : item,
+                            ),
+                          );
+                        }}
                       >
                         <option value="Pending">Pending</option>
                         <option value="In Review">In Review</option>
@@ -468,7 +604,7 @@ export default function AdminApplicationsPage() {
           )}
           status={
             applicationStatuses[
-              `${selectedApplication.applicant}-${selectedApplication.job}`
+              selectedApplication.id
             ] ?? "Pending"
           }
           onClose={() => setSelectedApplication(null)}
