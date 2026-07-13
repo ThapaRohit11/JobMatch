@@ -1,54 +1,14 @@
-import {
-  adminStats,
-  recentApplications,
-  recentJobPosts,
-} from "./admin-data";
+"use client";
+
+import { useEffect, useState } from "react";
+import { getAdminDashboard } from "../../lib/admin-api";
 import { Card } from "./components";
 
-const activityGroups = [
-  {
-    title: "Recent Job Posts",
-    description: "Newest roles added by companies",
-    items: recentJobPosts,
-    accent: "from-cyan-500 to-blue-600 shadow-cyan-500/20",
-    icon: (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="20" height="14" x="2" y="7" rx="2" />
-        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M2 12h20M10 12v2h4v-2" />
-      </svg>
-    ),
-  },
-  {
-    title: "Recent Applications",
-    description: "Latest candidates applying to jobs",
-    items: recentApplications,
-    accent: "from-emerald-500 to-teal-600 shadow-emerald-500/20",
-    icon: (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-        <path d="M14 2v6h6M9 13h6M9 17h4" />
-      </svg>
-    ),
-  },
-];
+type AdminStat = {
+  label: string;
+  value: string;
+  detail: string;
+};
 
 const statStyles = [
   {
@@ -112,6 +72,63 @@ const statStyles = [
 ];
 
 export default function AdminDashboardPage() {
+  const [adminStats, setAdminStats] = useState<AdminStat[]>([]);
+  const [recentJobPosts, setRecentJobPosts] = useState<string[]>([]);
+  const [recentApplications, setRecentApplications] = useState<string[]>([]);
+
+  useEffect(() => {
+    getAdminDashboard().then((data) => {
+      setAdminStats(data.stats);
+      setRecentJobPosts(data.recentJobPosts);
+      setRecentApplications(data.recentApplications);
+    });
+  }, []);
+
+  const activityGroups = [
+    {
+      title: "Recent Job Posts",
+      description: "Newest roles added by companies",
+      items: recentJobPosts,
+      accent: "from-cyan-500 to-blue-600 shadow-cyan-500/20",
+      icon: (
+        <svg
+          aria-hidden="true"
+          className="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect width="20" height="14" x="2" y="7" rx="2" />
+          <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M2 12h20M10 12v2h4v-2" />
+        </svg>
+      ),
+    },
+    {
+      title: "Recent Applications",
+      description: "Latest candidates applying to jobs",
+      items: recentApplications,
+      accent: "from-emerald-500 to-teal-600 shadow-emerald-500/20",
+      icon: (
+        <svg
+          aria-hidden="true"
+          className="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+          <path d="M14 2v6h6M9 13h6M9 17h4" />
+        </svg>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="overflow-hidden rounded-2xl border border-cyan-100/80 bg-white shadow-sm shadow-cyan-900/5">
@@ -189,7 +206,7 @@ export default function AdminDashboardPage() {
             <div className="mt-2 divide-y divide-cyan-50">
               {group.items.map((activity, index) => (
                 <div
-                  key={activity}
+                  key={`${group.title}-${index}`}
                   className="group flex items-start gap-4 rounded-xl px-2 py-4 text-sm font-semibold leading-6 text-slate-700 transition hover:bg-slate-50"
                 >
                   <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-50 text-cyan-700 transition group-hover:bg-cyan-100">
