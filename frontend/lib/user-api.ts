@@ -8,6 +8,7 @@ export type UserProfile = {
   location: string;
   joined: string;
   resumeScore: number;
+  resumeLabel: string;
   skills: string;
 };
 
