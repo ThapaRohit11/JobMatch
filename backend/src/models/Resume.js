@@ -17,6 +17,7 @@ const resumeSchema = new mongoose.Schema(
     github: { type: String, default: "", trim: true },
     score: { type: Number, default: 0 },
     analysis: { type: mongoose.Schema.Types.Mixed, default: null },
+    reviewHistory: { type: [mongoose.Schema.Types.Mixed], default: [] },
     role: { type: String, required: true, trim: true },
     status: {
       type: String,
