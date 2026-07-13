@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { users } from "../admin-data";
+import { useEffect, useState } from "react";
+import { AdminUser, getAdminUsers } from "../../../lib/admin-api";
 
-type User = (typeof users)[number];
+type User = AdminUser;
 
 function initials(name: string) {
   return name
@@ -23,6 +23,10 @@ function scoreBarColor(score: number) {
 }
 
 function scoreLabel(score: number) {
+  if (score === 0) {
+    return "No resume";
+  }
+
   if (score >= 90) {
     return "Excellent";
   }
@@ -34,34 +38,20 @@ function scoreLabel(score: number) {
   return "Good";
 }
 
-function companyApplications(user: User) {
-  const companySets = [
-    [
-      { name: "Google", logo: "G", status: "Interview" },
-      { name: "Microsoft", logo: "Ms", status: "Applied" },
-      { name: "Netflix", logo: "Nx", status: "Rejected" },
-    ],
-    [
-      { name: "BluePeak Labs", logo: "BL", status: "Applied" },
-      { name: "Northstar AI", logo: "NA", status: "Interview" },
-      { name: "CloudHive", logo: "CH", status: "Rejected" },
-    ],
-    [
-      { name: "HireOS", logo: "HO", status: "Applied" },
-      { name: "Apple", logo: "A", status: "Interview" },
-      { name: "Meta", logo: "M", status: "Rejected" },
-    ],
-  ];
-
-  return companySets[user.name.length % companySets.length];
-}
-
 function statusStyles(status: string) {
-  if (status === "Interview") {
+  if (status === "In Review") {
     return {
       logo: "bg-blue-50 text-blue-600",
       badge: "bg-blue-50 text-blue-700",
       text: "text-blue-600",
+    };
+  }
+
+  if (status === "Accepted") {
+    return {
+      logo: "bg-emerald-50 text-emerald-600",
+      badge: "bg-emerald-50 text-emerald-700",
+      text: "text-emerald-600",
     };
   }
 
@@ -74,9 +64,9 @@ function statusStyles(status: string) {
   }
 
   return {
-    logo: "bg-sky-50 text-sky-600",
-    badge: "bg-slate-50 text-slate-700",
-    text: "text-slate-700",
+    logo: "bg-amber-50 text-amber-600",
+    badge: "bg-amber-50 text-amber-700",
+    text: "text-amber-700",
   };
 }
 
@@ -99,6 +89,9 @@ function UserDetailModal({
   user: User;
   onClose: () => void;
 }) {
+  const applications = user.applications ?? [];
+  const resume = user.resume;
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 py-4 backdrop-blur-md">
       <button
@@ -106,7 +99,7 @@ function UserDetailModal({
         className="absolute inset-0 cursor-default"
         onClick={onClose}
       />
-      <section className="relative z-10 flex max-h-[82vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/20">
+      <section className="relative z-10 flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/20">
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
           <div className="flex min-w-0 items-center gap-4">
             <div
@@ -204,6 +197,28 @@ function UserDetailModal({
             </div>
           </div>
 
+          {user.skills && (
+            <div>
+              <h3 className="text-base font-black text-slate-950">
+                Profile Skills
+              </h3>
+              <div className="mt-3 flex flex-wrap gap-2 rounded-2xl bg-slate-50 p-4">
+                {user.skills
+                  .split(/[,;\n]/)
+                  .map((skill) => skill.trim())
+                  .filter(Boolean)
+                  .map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-full bg-cyan-100 px-3 py-1.5 text-xs font-black text-cyan-700"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <h3 className="text-base font-black text-slate-950">
               Application Overview
@@ -237,66 +252,103 @@ function UserDetailModal({
           </div>
 
           <div>
-            <h3 className="text-base font-black text-slate-950">Resume Score</h3>
+            <h3 className="text-base font-black text-slate-950">
+              Resume Information
+            </h3>
             <div className="mt-3 rounded-2xl bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-slate-400">
-                  <span
-                    className={`text-3xl font-black ${scoreColor(user.resumeScore)}`}
-                  >
-                    {user.resumeScore}
-                  </span>{" "}
-                  <span className="text-base font-medium">/100</span>
+              {resume ? (
+                <>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-slate-400">
+                      <span
+                        className={`text-3xl font-black ${scoreColor(user.resumeScore)}`}
+                      >
+                        {user.resumeScore}
+                      </span>{" "}
+                      <span className="text-base font-medium">/100</span>
+                    </p>
+                    <span className="rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-bold text-emerald-700">
+                      {scoreLabel(user.resumeScore)}
+                    </span>
+                  </div>
+                  <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
+                    <div
+                      className={`h-full rounded-full ${scoreBarColor(user.resumeScore)}`}
+                      style={{ width: `${user.resumeScore}%` }}
+                    />
+                  </div>
+                  <div className="mt-4 grid gap-3 border-t border-slate-200 pt-4 text-sm sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs font-black uppercase text-slate-400">Target Role</p>
+                      <p className="mt-1 font-bold text-slate-800">{resume.role}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase text-slate-400">Resume Status</p>
+                      <p className="mt-1 font-bold text-slate-800">{resume.status}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase text-slate-400">Last Updated</p>
+                      <p className="mt-1 font-bold text-slate-800">{resume.updated}</p>
+                    </div>
+                  </div>
+                  {resume.summary && (
+                    <div className="mt-4 border-t border-slate-200 pt-4">
+                      <p className="text-xs font-black uppercase text-slate-400">Summary</p>
+                      <p className="mt-1 whitespace-pre-line text-sm font-medium leading-6 text-slate-700">
+                        {resume.summary}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm font-semibold text-slate-500">
+                  This user has not saved a resume yet.
                 </p>
-                <span className="rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-bold text-emerald-700">
-                  {scoreLabel(user.resumeScore)}
-                </span>
-              </div>
-              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
-                <div
-                  className={`h-full rounded-full ${scoreBarColor(user.resumeScore)}`}
-                  style={{ width: `${user.resumeScore}%` }}
-                />
-              </div>
+              )}
             </div>
           </div>
 
           <div>
             <h3 className="text-base font-black text-slate-950">
-              Companies Applied To
+              Applications
             </h3>
             <div className="mt-3 grid gap-2.5">
-              {companyApplications(user).map((company) => {
-                const styles = statusStyles(company.status);
+              {applications.map((application) => {
+                const styles = statusStyles(application.status);
 
                 return (
                   <div
-                    key={company.name}
+                    key={application.id}
                     className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-3"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div
                         className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xs font-black ${styles.logo}`}
                       >
-                        {company.logo}
+                        {initials(application.company)}
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-base font-black text-slate-950">
-                          {company.name}
+                          {application.job}
                         </p>
                         <p className={`mt-0.5 text-sm font-medium ${styles.text}`}>
-                          {company.status}
+                          {application.company} - {application.date}
                         </p>
                       </div>
                     </div>
                     <span
                       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${styles.badge}`}
                     >
-                      {company.status}
+                      {application.status}
                     </span>
                   </div>
                 );
               })}
+              {applications.length === 0 && (
+                <div className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+                  This user has not submitted any applications yet.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -306,7 +358,14 @@ function UserDetailModal({
 }
 
 export default function AdminUsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    getAdminUsers().then((data) => {
+      setUsers(data.users);
+    });
+  }, []);
 
   return (
     <div className="space-y-7">
@@ -368,7 +427,7 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-slate-100">
               {users.map((user) => (
                 <tr
-                  key={user.email}
+                  key={user.id}
                   className="transition hover:bg-cyan-50/35"
                 >
                   <td className="px-8 py-6">
