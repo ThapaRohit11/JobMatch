@@ -15,27 +15,24 @@ function initials(name: string) {
 }
 
 function scoreColor(score: number) {
-  return score >= 85 ? "text-emerald-600" : "text-blue-600";
+  if (score >= 80) return "text-emerald-600";
+  if (score >= 70) return "text-blue-600";
+  if (score >= 60) return "text-amber-600";
+  return "text-rose-600";
 }
 
 function scoreBarColor(score: number) {
-  return score >= 85 ? "bg-emerald-500" : "bg-blue-600";
+  if (score >= 80) return "bg-emerald-500";
+  if (score >= 70) return "bg-blue-500";
+  if (score >= 60) return "bg-amber-500";
+  return "bg-rose-500";
 }
 
-function scoreLabel(score: number) {
-  if (score === 0) {
-    return "No resume";
-  }
-
-  if (score >= 90) {
-    return "Excellent";
-  }
-
-  if (score >= 80) {
-    return "Strong";
-  }
-
-  return "Good";
+function scoreBadgeColor(score: number) {
+  if (score >= 80) return "bg-emerald-100 text-emerald-700";
+  if (score >= 70) return "bg-blue-100 text-blue-700";
+  if (score >= 60) return "bg-amber-100 text-amber-700";
+  return "bg-rose-100 text-rose-700";
 }
 
 function statusStyles(status: string) {
@@ -267,8 +264,8 @@ function UserDetailModal({
                       </span>{" "}
                       <span className="text-base font-medium">/100</span>
                     </p>
-                    <span className="rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-bold text-emerald-700">
-                      {scoreLabel(user.resumeScore)}
+                    <span className={`rounded-full px-4 py-1.5 text-sm font-bold ${scoreBadgeColor(user.resumeScore)}`}>
+                      {user.resumeLabel}
                     </span>
                   </div>
                   <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
