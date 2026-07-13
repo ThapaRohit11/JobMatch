@@ -4,6 +4,7 @@ import Job from "../models/Job.js";
 import Resume from "../models/Resume.js";
 import User from "../models/User.js";
 import { formatDate } from "../utils/formatDate.js";
+import { analyzeResume } from "../utils/resumeAnalysis.js";
 
 function jobView(job) {
   return {
@@ -49,13 +50,15 @@ function experienceView(value) {
 }
 
 function resumeView(resume) {
+  const analysis = analyzeResume(resume);
   return {
     id: resume._id,
     candidate: resume.candidate,
     email: resume.email,
     uploaded: formatDate(resume.createdAt),
     updated: formatDate(resume.updatedAt),
-    score: String(resume.score),
+    score: String(analysis.score),
+    analysis,
     role: resume.role,
     status: resume.status,
     revisionNotes: resume.revisionNotes,
@@ -111,7 +114,8 @@ function userView(user, applications = [], resumes = []) {
     applied: userApplications.length,
     accepted: userApplications.filter((application) => application.status === "Accepted").length,
     rejected: userApplications.filter((application) => application.status === "Rejected").length,
-    resumeScore: resume?.score || 0,
+    resumeScore: resume ? analyzeResume(resume).score : 0,
+    resumeLabel: resume ? analyzeResume(resume).label : "No resume",
     avatarColor: "bg-blue-600",
     status: "Active",
     joined: formatDate(user.createdAt),
