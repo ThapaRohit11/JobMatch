@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { jobs } from "../../admin/admin-data";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { applyToUserJob, getUserJobs, UserJob } from "../../../lib/user-api";
 
-type Job = (typeof jobs)[number];
+type Job = UserJob;
 
 function statusClasses(status: string) {
   return status === "Open"
@@ -17,110 +19,32 @@ function typeClasses(type: string) {
     : "bg-cyan-50 text-cyan-700";
 }
 
-const jobDetails: Record<
-  string,
-  {
-    description: string;
-    responsibilities: string[];
-    requirements: string[];
-    benefits: string[];
-    deadline: string;
-  }
-> = {
-  "Senior Frontend Engineer": {
-    description:
-      "Build fast, accessible product interfaces for candidate matching, resume insights, and recruiter workflows.",
-    responsibilities: [
-      "Create polished React and TypeScript features for high-traffic dashboards.",
-      "Partner with product and design to improve job discovery flows.",
-      "Keep frontend performance, accessibility, and component quality high.",
-    ],
-    requirements: [
-      "Strong React, TypeScript, and modern CSS experience.",
-      "Experience building reusable UI components and data-heavy screens.",
-      "Comfort working with APIs, state, and production debugging.",
-    ],
-    benefits: [
-      "Remote-first team",
-      "Health and wellness coverage",
-      "Learning budget",
-      "Flexible working hours",
-    ],
-    deadline: "Jul 28, 2026",
-  },
-  "Product Designer": {
-    description:
-      "Design intuitive hiring and candidate experiences that make resume feedback and job matching simple to use.",
-    responsibilities: [
-      "Create flows, wireframes, and polished product screens.",
-      "Run lightweight user research and turn findings into improvements.",
-      "Maintain visual consistency across web and dashboard experiences.",
-    ],
-    requirements: [
-      "Strong product design portfolio for SaaS or marketplace products.",
-      "Comfort with Figma, design systems, and cross-functional delivery.",
-      "Ability to simplify complex workflows into clear interfaces.",
-    ],
-    benefits: [
-      "Hybrid work setup",
-      "Design tools budget",
-      "Paid time off",
-      "Career growth support",
-    ],
-    deadline: "Jul 25, 2026",
-  },
-  "Data Analyst": {
-    description:
-      "Analyze candidate, resume, and job-market data to improve match quality and product decisions.",
-    responsibilities: [
-      "Build dashboards for application and matching performance.",
-      "Find patterns in user behavior and job-market trends.",
-      "Share clear insights with product, engineering, and operations.",
-    ],
-    requirements: [
-      "Strong SQL and spreadsheet analysis skills.",
-      "Experience with BI dashboards and product metrics.",
-      "Ability to explain data findings clearly to non-technical teams.",
-    ],
-    benefits: [
-      "Hybrid office schedule",
-      "Analytics tooling budget",
-      "Mentorship program",
-      "Team wellness benefits",
-    ],
-    deadline: "Jul 22, 2026",
-  },
-  "Talent Operations Lead": {
-    description:
-      "Own candidate operations and help keep applications, resume reviews, and job postings moving smoothly.",
-    responsibilities: [
-      "Coordinate application review workflows and candidate updates.",
-      "Improve operational processes for resume and job matching teams.",
-      "Track quality metrics and remove bottlenecks across hiring flows.",
-    ],
-    requirements: [
-      "Experience in recruiting operations, talent, or HR technology.",
-      "Strong communication and process management skills.",
-      "Comfort working with dashboards, reports, and support workflows.",
-    ],
-    benefits: [
-      "Health coverage",
-      "Operations leadership path",
-      "Flexible schedule",
-      "Commuter support",
-    ],
-    deadline: "Jul 24, 2026",
-  },
-};
+function lines(value?: string) {
+  return value?.split("\n").filter(Boolean) ?? [];
+}
+
+function skillList(value?: string) {
+  return value
+    ?.split(/[,;\n]/)
+    .map((skill) => skill.trim())
+    .filter(Boolean) ?? [];
+}
 
 function JobDetailsModal({
   job,
   onClose,
+  onApplied,
 }: {
   job: Job;
   onClose: () => void;
+  onApplied: () => void;
 }) {
-  const details = jobDetails[job.title] ?? jobDetails["Senior Frontend Engineer"];
+  const [error, setError] = useState("");
+  const [isApplying, setIsApplying] = useState(false);
+  const responsibilities = lines(job.responsibilities);
+  const requirements = lines(job.requirements);
+  const benefits = lines(job.benefits);
+  const skills = skillList(job.skills);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 backdrop-blur-md">
@@ -196,7 +120,7 @@ function JobDetailsModal({
                 Apply By
               </p>
               <p className="mt-1 text-sm font-black text-rose-700">
-                {details.deadline}
+                {job.applyBy || "Not set"}
               </p>
             </div>
           </div>
@@ -206,8 +130,29 @@ function JobDetailsModal({
               Job Description
             </h3>
             <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
-              {details.description}
+              {job.description || "No description has been added yet."}
             </p>
+          </section>
+
+          <section className="rounded-2xl bg-violet-50/80 p-5">
+            <h3 className="text-lg font-black text-slate-950">
+              Required Skills
+            </h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {skills.map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-violet-700"
+                >
+                  {skill}
+                </span>
+              ))}
+              {skills.length === 0 && (
+                <span className="text-sm font-semibold text-slate-500">
+                  No skills added yet.
+                </span>
+              )}
+            </div>
           </section>
 
           <section className="grid gap-4 lg:grid-cols-2">
@@ -216,9 +161,10 @@ function JobDetailsModal({
                 Responsibilities
               </h3>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-700">
-                {details.responsibilities.map((item) => (
+                {responsibilities.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
+                {responsibilities.length === 0 && <li>No responsibilities added yet.</li>}
               </ul>
             </div>
             <div className="rounded-2xl bg-indigo-50/70 p-5">
@@ -226,9 +172,10 @@ function JobDetailsModal({
                 Requirements
               </h3>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-700">
-                {details.requirements.map((item) => (
+                {requirements.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
+                {requirements.length === 0 && <li>No requirements added yet.</li>}
               </ul>
             </div>
           </section>
@@ -236,7 +183,7 @@ function JobDetailsModal({
           <section className="rounded-2xl bg-emerald-50/80 p-5">
             <h3 className="text-lg font-black text-slate-950">Benefits</h3>
             <div className="mt-3 flex flex-wrap gap-2">
-              {details.benefits.map((benefit) => (
+              {benefits.map((benefit) => (
                 <span
                   key={benefit}
                   className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-emerald-700"
@@ -244,11 +191,21 @@ function JobDetailsModal({
                   {benefit}
                 </span>
               ))}
+              {benefits.length === 0 && (
+                <span className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-emerald-700">
+                  No benefits added yet
+                </span>
+              )}
             </div>
           </section>
         </div>
 
         <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 px-6 py-5 sm:flex-row sm:justify-end">
+          {error && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700 sm:mr-auto">
+              {error}
+            </p>
+          )}
           <button
             className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
             onClick={onClose}
@@ -256,10 +213,21 @@ function JobDetailsModal({
             Cancel
           </button>
           <button
-            className="h-11 rounded-full bg-cyan-600 px-6 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700"
-            onClick={onClose}
+            className="h-11 rounded-full bg-cyan-600 px-6 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isApplying}
+            onClick={async () => {
+              try {
+                setIsApplying(true);
+                setError("");
+                await applyToUserJob(job.id);
+                onApplied();
+              } catch (applyError) {
+                setError(applyError instanceof Error ? applyError.message : "Unable to apply");
+                setIsApplying(false);
+              }
+            }}
           >
-            Apply Now
+            {isApplying ? "Applying..." : "Apply Now"}
           </button>
         </div>
       </section>
@@ -268,8 +236,23 @@ function JobDetailsModal({
 }
 
 export default function UserJobsPage() {
+  const router = useRouter();
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const openJobs = jobs.filter((job) => job.status === "Open").length;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredJobs = normalizedQuery
+    ? jobs.filter((job) =>
+        [job.title, job.company, job.location, job.type, job.skills]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(normalizedQuery)),
+      )
+    : jobs;
+
+  useEffect(() => {
+    getUserJobs().then((data) => setJobs(data.jobs));
+  }, []);
 
   return (
     <div className="space-y-7">
@@ -289,8 +272,12 @@ export default function UserJobsPage() {
             <path d="m21 21-4.3-4.3" />
           </svg>
           <input
+            type="search"
+            aria-label="Search jobs"
             className="h-16 w-full rounded-3xl border border-cyan-100 bg-white px-14 text-lg font-medium text-slate-700 shadow-sm shadow-slate-900/10 outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
             placeholder="Search jobs by title, company, or location..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
           />
         </div>
       </div>
@@ -317,9 +304,9 @@ export default function UserJobsPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        {jobs.map((job) => (
+        {filteredJobs.map((job) => (
           <article
-            key={job.title}
+            key={job.id}
             className="rounded-3xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-slate-900/10 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-900/10"
           >
             <div className="flex items-start justify-between gap-4">
@@ -367,8 +354,29 @@ export default function UserJobsPage() {
                   Apply By
                 </p>
                 <p className="mt-1 text-sm font-black text-rose-700">
-                  {jobDetails[job.title]?.deadline ?? "Jul 28, 2026"}
+                  {job.applyBy || "Not set"}
                 </p>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-xs font-black uppercase text-slate-400">
+                Required Skills
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {skillList(job.skills).map((skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-black text-violet-700"
+                  >
+                    {skill}
+                  </span>
+                ))}
+                {skillList(job.skills).length === 0 && (
+                  <span className="text-sm font-semibold text-slate-400">
+                    No skills added
+                  </span>
+                )}
               </div>
             </div>
 
@@ -390,12 +398,36 @@ export default function UserJobsPage() {
             </div>
           </article>
         ))}
+        {filteredJobs.length === 0 && (
+          <div className="rounded-3xl border border-dashed border-cyan-200 bg-white p-10 text-center xl:col-span-2">
+            <p className="text-lg font-black text-slate-800">
+              No jobs found
+            </p>
+            <p className="mt-2 text-sm font-semibold text-slate-500">
+              Try another job title, company, location, type, or skill.
+            </p>
+            <button
+              type="button"
+              className="mt-4 h-10 rounded-full bg-cyan-600 px-5 text-sm font-bold text-white transition hover:bg-cyan-700"
+              onClick={() => setSearchQuery("")}
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
       </section>
 
       {selectedJob && (
         <JobDetailsModal
           job={selectedJob}
           onClose={() => setSelectedJob(null)}
+          onApplied={() => {
+            sessionStorage.setItem(
+              "jobmatchApplicationToast",
+              `Application submitted successfully for ${selectedJob.title}.`,
+            );
+            router.push("/user/applications");
+          }}
         />
       )}
     </div>
