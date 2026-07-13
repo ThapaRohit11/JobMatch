@@ -26,6 +26,21 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    professionalRole: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    location: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    skills: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   { timestamps: true }
 );
