@@ -1,10 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { companies, jobs } from "../admin-data";
+import { FormEvent, useEffect, useState } from "react";
+import {
+  AdminCompany,
+  AdminJob,
+  deleteAdminJob,
+  getAdminCompanies,
+  getAdminJobs,
+  updateAdminJob,
+} from "../../../lib/admin-api";
 
-type Job = (typeof jobs)[number];
+type Job = AdminJob;
+type Company = AdminCompany;
 
 function statusClasses(status: string) {
   return status === "Open"
@@ -46,20 +54,40 @@ function BackButton({ onClick }: { onClick: () => void }) {
 
 function EditJobForm({
   job,
+  companies,
   onBack,
+  onSaved,
 }: {
   job: Job;
+  companies: Company[];
   onBack: () => void;
+  onSaved: (job: Job) => void;
 }) {
   const [selectedCompanyName, setSelectedCompanyName] = useState(job.company);
+  const [message, setMessage] = useState("");
   const selectedCompany =
     companies.find((company) => company.name === selectedCompanyName) ??
     companies[0];
-  const fields = [
-    { label: "Job title", value: job.title },
-    { label: "Salary", value: job.salary },
-    { label: "Skills", value: "React, TypeScript, Tailwind CSS" },
-  ];
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const data = await updateAdminJob(job.id, {
+      company: selectedCompanyName,
+      title: String(formData.get("title") || ""),
+      salary: String(formData.get("salary") || ""),
+      skills: String(formData.get("skills") || ""),
+      type: String(formData.get("type") || ""),
+      applyBy: String(formData.get("applyBy") || ""),
+      description: String(formData.get("description") || ""),
+      responsibilities: String(formData.get("responsibilities") || ""),
+      requirements: String(formData.get("requirements") || ""),
+      benefits: String(formData.get("benefits") || ""),
+    });
+
+    onSaved(data.job);
+    setMessage("Job updated successfully");
+  }
 
   return (
     <div className="space-y-6">
@@ -77,7 +105,7 @@ function EditJobForm({
       </div>
 
       <section className="rounded-2xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-cyan-900/5">
-        <form className="grid gap-5 lg:grid-cols-2">
+        <form className="grid gap-5 lg:grid-cols-2" onSubmit={handleSubmit}>
           <label className="block text-sm font-bold text-slate-800">
             Company name
             <select
@@ -100,21 +128,36 @@ function EditJobForm({
               value={selectedCompany?.location ?? ""}
             />
           </label>
-          {fields.map((field) => (
-            <label
-              key={field.label}
-              className="block text-sm font-bold text-slate-800"
-            >
-              {field.label}
-              <input
-                className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-                defaultValue={field.value}
-              />
-            </label>
-          ))}
+          <label className="block text-sm font-bold text-slate-800">
+            Job title
+            <input
+              name="title"
+              className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              defaultValue={job.title}
+              required
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800">
+            Salary
+            <input
+              name="salary"
+              className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              defaultValue={job.salary}
+              required
+            />
+          </label>
+          <label className="block text-sm font-bold text-slate-800">
+            Skills
+            <input
+              name="skills"
+              className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+              defaultValue={job.skills || ""}
+            />
+          </label>
           <label className="block text-sm font-bold text-slate-800">
             Job type
             <select
+              name="type"
               className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-white px-4 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
               defaultValue={job.type}
             >
@@ -129,39 +172,49 @@ function EditJobForm({
           <label className="block text-sm font-bold text-slate-800">
             Apply by
             <input
+              name="applyBy"
               type="date"
-              defaultValue="2026-07-28"
+              defaultValue={job.applyBy || ""}
               className="mt-2 h-12 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
             />
           </label>
           <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
             Job description
             <textarea
+              name="description"
               className="mt-2 min-h-36 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-              defaultValue={`${selectedCompanyName} is hiring a ${job.title}. This role is ${job.type.toLowerCase()} and based in ${selectedCompany?.location ?? job.location}.`}
+              defaultValue={job.description || `${selectedCompanyName} is hiring a ${job.title}. This role is ${job.type.toLowerCase()} and based in ${selectedCompany?.location ?? job.location}.`}
             />
           </label>
           <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
             Responsibilities
             <textarea
+              name="responsibilities"
               className="mt-2 min-h-32 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-              defaultValue={`Deliver high-quality work for the ${job.title} role.\nCollaborate with product and cross-functional teams.\nMaintain quality, performance, and clear documentation.`}
+              defaultValue={job.responsibilities || `Deliver high-quality work for the ${job.title} role.\nCollaborate with product and cross-functional teams.\nMaintain quality, performance, and clear documentation.`}
             />
           </label>
           <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
             Requirements
             <textarea
+              name="requirements"
               className="mt-2 min-h-32 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-              defaultValue={`Relevant experience for the ${job.title} position.\nStrong communication and problem-solving skills.\nAbility to work effectively with a collaborative team.`}
+              defaultValue={job.requirements || `Relevant experience for the ${job.title} position.\nStrong communication and problem-solving skills.\nAbility to work effectively with a collaborative team.`}
             />
           </label>
           <label className="block text-sm font-bold text-slate-800 lg:col-span-2">
             Benefits
             <textarea
+              name="benefits"
               className="mt-2 min-h-28 w-full rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
-              defaultValue={"Health and wellness coverage\nPaid time off\nLearning budget\nFlexible working hours"}
+              defaultValue={job.benefits || "Health and wellness coverage\nPaid time off\nLearning budget\nFlexible working hours"}
             />
           </label>
+          {message && (
+            <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 lg:col-span-2">
+              {message}
+            </p>
+          )}
           <div className="flex flex-wrap gap-3 lg:col-span-2">
             <button className="h-12 rounded-full bg-cyan-600 px-7 text-sm font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:bg-cyan-700">
               Save Changes
@@ -183,9 +236,11 @@ function EditJobForm({
 function DeleteJobModal({
   job,
   onCancel,
+  onConfirm,
 }: {
   job: Job;
   onCancel: () => void;
+  onConfirm: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 backdrop-blur-md">
@@ -231,7 +286,7 @@ function DeleteJobModal({
           </button>
           <button
             className="h-11 rounded-full bg-rose-600 px-5 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700"
-            onClick={onCancel}
+            onClick={onConfirm}
           >
             Confirm Delete
           </button>
@@ -242,14 +297,35 @@ function DeleteJobModal({
 }
 
 export default function AdminJobsPage() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [deletingJob, setDeletingJob] = useState<Job | null>(null);
   const openJobs = jobs.filter((job) => job.status === "Open").length;
   const totalApplicants = jobs.reduce((total, job) => total + job.applicants, 0);
 
+  useEffect(() => {
+    Promise.all([getAdminJobs(), getAdminCompanies()]).then(
+      ([jobsData, companiesData]) => {
+        setJobs(jobsData.jobs);
+        setCompanies(companiesData.companies);
+      },
+    );
+  }, []);
+
   if (editingJob) {
     return (
-      <EditJobForm job={editingJob} onBack={() => setEditingJob(null)} />
+      <EditJobForm
+        job={editingJob}
+        companies={companies}
+        onBack={() => setEditingJob(null)}
+        onSaved={(updatedJob) => {
+          setJobs((current) =>
+            current.map((job) => (job.id === updatedJob.id ? updatedJob : job)),
+          );
+          setEditingJob(updatedJob);
+        }}
+      />
     );
   }
 
@@ -344,7 +420,7 @@ export default function AdminJobsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {jobs.map((job) => (
-                <tr key={job.title} className="transition hover:bg-cyan-50/35">
+                <tr key={job.id} className="transition hover:bg-cyan-50/35">
                   <td className="px-8 py-6">
                     <p className="text-lg font-black text-slate-950">
                       {job.title}
@@ -444,6 +520,13 @@ export default function AdminJobsPage() {
         <DeleteJobModal
           job={deletingJob}
           onCancel={() => setDeletingJob(null)}
+          onConfirm={async () => {
+            await deleteAdminJob(deletingJob.id);
+            setJobs((current) =>
+              current.filter((job) => job.id !== deletingJob.id),
+            );
+            setDeletingJob(null);
+          }}
         />
       )}
     </div>
