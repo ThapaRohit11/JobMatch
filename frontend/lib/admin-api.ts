@@ -46,6 +46,14 @@ export type AdminResume = {
   uploaded: string;
   updated: string;
   score: string;
+  analysis?: {
+    score: number;
+    label: string;
+    summary: string;
+    breakdown: Record<string, number>;
+    strengths: string[];
+    improvements: string[];
+  };
   role: string;
   status: "Reviewed" | "Needs Revision" | "Pending";
   revisionNotes?: string;
@@ -88,6 +96,7 @@ export type AdminUser = {
   accepted: number;
   rejected: number;
   resumeScore: number;
+  resumeLabel: string;
   avatarColor: string;
   status: string;
   joined: string;
