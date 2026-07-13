@@ -3,8 +3,11 @@ import dotenv from "dotenv";
 import express from "express";
 import connectDB from "./src/config/db.js";
 import authRoutes from "./src/routes/authRoutes.js";
+import adminRoutes from "./src/routes/adminRoutes.js";
+import userRoutes from "./src/routes/userRoutes.js";
 import { errorHandler, notFound } from "./src/middleware/errorMiddleware.js";
 import seedAdmin from "./src/utils/seedAdmin.js";
+import seedAdminData from "./src/utils/seedAdminData.js";
 
 dotenv.config();
 
@@ -13,6 +16,7 @@ const PORT = process.env.PORT || 4200;
 
 await connectDB();
 await seedAdmin();
+await seedAdminData();
 
 app.use(
   cors({
@@ -30,6 +34,8 @@ app.get("/server", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/user", userRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
