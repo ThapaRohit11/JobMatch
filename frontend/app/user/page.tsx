@@ -25,6 +25,13 @@ function statusClasses(status: string) {
   return "bg-rose-50 text-rose-700";
 }
 
+function resumeScoreStyles(score: number) {
+  if (score >= 80) return { text: "text-emerald-600", badge: "bg-emerald-50 text-emerald-700", bar: "bg-emerald-500" };
+  if (score >= 70) return { text: "text-blue-600", badge: "bg-blue-50 text-blue-700", bar: "bg-blue-500" };
+  if (score >= 60) return { text: "text-amber-600", badge: "bg-amber-50 text-amber-700", bar: "bg-amber-500" };
+  return { text: "text-rose-600", badge: "bg-rose-50 text-rose-700", bar: "bg-rose-500" };
+}
+
 export default function UserDashboardPage() {
   const [userProfile, setUserProfile] = useState<UserProfile>({
     id: "",
@@ -34,6 +41,7 @@ export default function UserDashboardPage() {
     location: "",
     joined: "",
     resumeScore: 0,
+    resumeLabel: "No resume",
     skills: "",
   });
   const [jobMatches, setJobMatches] = useState<UserJob[]>([]);
@@ -54,6 +62,7 @@ export default function UserDashboardPage() {
   const accepted = userApplications.filter(
     (application) => application.status === "Accepted",
   ).length;
+  const scoreStyles = resumeScoreStyles(userProfile.resumeScore);
 
   return (
     <div className="space-y-7">
@@ -92,19 +101,19 @@ export default function UserDashboardPage() {
                 Resume Score
               </p>
               <p className="mt-2 text-slate-400">
-                <span className="text-5xl font-black text-emerald-600">
+                <span className={`text-5xl font-black ${scoreStyles.text}`}>
                   {userProfile.resumeScore}
                 </span>{" "}
                 /100
               </p>
             </div>
-            <span className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">
-              Strong
+            <span className={`rounded-full px-4 py-2 text-sm font-black ${scoreStyles.badge}`}>
+              {userProfile.resumeLabel}
             </span>
           </div>
           <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-emerald-500"
+              className={`h-full rounded-full ${scoreStyles.bar}`}
               style={{ width: `${userProfile.resumeScore}%` }}
             />
           </div>
@@ -192,7 +201,7 @@ export default function UserDashboardPage() {
             ))}
             {resumeTips.length === 0 && (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
-                No resume tips have been provided yet.
+                Save your resume to receive an automatic, content-based analysis.
               </div>
             )}
           </div>
