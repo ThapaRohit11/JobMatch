@@ -22,7 +22,7 @@ export default function SignupPage() {
         setIsSubmitting(true);
 
         try {
-          const data = await authRequest("/api/auth/signup", {
+          await authRequest("/api/auth/signup", {
             name,
             email,
             password,
@@ -30,9 +30,9 @@ export default function SignupPage() {
             role: "user",
           });
 
-          localStorage.setItem("jobmatchToken", data.token);
-          localStorage.setItem("jobmatchUser", JSON.stringify(data.user));
-          router.push("/user");
+          localStorage.removeItem("jobmatchToken");
+          localStorage.removeItem("jobmatchUser");
+          router.push("/login");
         } catch (authError) {
           setError(authError instanceof Error ? authError.message : "Signup failed");
         } finally {
