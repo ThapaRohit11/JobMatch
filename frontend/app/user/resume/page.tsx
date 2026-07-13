@@ -16,6 +16,7 @@ export default function UserResumePage() {
     location: "",
     joined: "",
     resumeScore: 0,
+    resumeLabel: "No resume",
     skills: "",
   });
   const [resumeBuilderData, setResumeBuilderData] = useState({
@@ -283,9 +284,9 @@ export default function UserResumePage() {
         certifications,
         awards,
       };
-      await saveUserResume(payload);
+      const data = await saveUserResume(payload);
       setResumeBuilderData(payload);
-      setMessage("Resume saved successfully");
+      setMessage(`Resume analyzed and saved: ${data.resume.score}/100 (${data.resume.analysis.label})`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save resume");
     }
