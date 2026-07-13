@@ -44,6 +44,24 @@ function labelFor(score) {
   return "Needs improvement";
 }
 
+function tipTitle(message) {
+  if (message.includes("phone")) return "Complete contact details";
+  if (message.includes("summary")) return "Improve your summary";
+  if (message.includes("technical skills")) return "Expand your skills";
+  if (message.includes("experience bullets")) return "Show measurable impact";
+  if (message.includes("work, internship")) return "Add relevant experience";
+  if (message.includes("degree, institution")) return "Complete education details";
+  if (message.includes("education or training")) return "Add education";
+  if (message.includes("project technologies")) return "Strengthen your projects";
+  if (message.includes("relevant project")) return "Add a relevant project";
+  if (message.includes("role-specific keywords")) return "Improve ATS keywords";
+  return "Resume improvement";
+}
+
+export function automaticReviewStatus(score) {
+  return score >= 70 ? "Reviewed" : "Needs Revision";
+}
+
 export function analyzeResume(resume = {}) {
   const summary = text(resume.summary);
   const skills = text(resume.skills)
@@ -154,6 +172,19 @@ export function analyzeResume(resume = {}) {
 
   const score = Math.max(0, Math.min(100, Math.round(Object.values(sections).reduce((sum, value) => sum + value, 0))));
 
+  const limitedImprovements = improvements.slice(0, 5);
+  const recommendations = limitedImprovements.map((message) => ({
+    title: tipTitle(message),
+    message,
+  }));
+
+  if (recommendations.length === 0) {
+    recommendations.push({
+      title: "Tailor each application",
+      message: "Your resume is already strong. For each application, align the summary and skills with the job description, while keeping every claim accurate and supported by evidence.",
+    });
+  }
+
   return {
     version: 1,
     score,
@@ -161,7 +192,7 @@ export function analyzeResume(resume = {}) {
     summary: `${labelFor(score)} resume (${score}/100), based on content quality, completeness, impact, and ATS readiness.`,
     breakdown: sections,
     strengths: strengths.slice(0, 4),
-    improvements: improvements.slice(0, 5),
+    improvements: limitedImprovements,
+    recommendations,
   };
 }
-
