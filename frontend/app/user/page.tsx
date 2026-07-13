@@ -9,6 +9,22 @@ import {
   UserProfile,
 } from "../../lib/user-api";
 
+type ResumeTip = {
+  title: string;
+  message: string;
+};
+
+type ResumeReview = {
+  id: string;
+  title: string;
+  reviewedAt: string;
+  reviewedDate: string;
+  score: number;
+  label: string;
+  status: "Reviewed" | "Needs Revision" | "Pending";
+  recommendations: ResumeTip[];
+};
+
 function statusClasses(status: string) {
   if (status === "Accepted") {
     return "bg-emerald-50 text-emerald-700";
@@ -32,6 +48,12 @@ function resumeScoreStyles(score: number) {
   return { text: "text-rose-600", badge: "bg-rose-50 text-rose-700", bar: "bg-rose-500" };
 }
 
+function reviewStatusClasses(status: ResumeReview["status"]) {
+  if (status === "Reviewed") return "bg-emerald-100 text-emerald-700";
+  if (status === "Needs Revision") return "bg-orange-100 text-orange-700";
+  return "bg-blue-100 text-blue-700";
+}
+
 export default function UserDashboardPage() {
   const [userProfile, setUserProfile] = useState<UserProfile>({
     id: "",
@@ -46,15 +68,18 @@ export default function UserDashboardPage() {
   });
   const [jobMatches, setJobMatches] = useState<UserJob[]>([]);
   const [userApplications, setUserApplications] = useState<UserApplication[]>([]);
-  const [resumeTips, setResumeTips] = useState<string[]>([]);
+  const [resumeReviews, setResumeReviews] = useState<ResumeReview[]>([]);
+  const [selectedReview, setSelectedReview] = useState<ResumeReview | null>(null);
 
   useEffect(() => {
     getUserDashboard().then((data) => {
       setUserProfile(data.profile);
       setJobMatches(data.jobMatches);
       setUserApplications(data.applications);
-      setResumeTips(
-        (data.resumeTips ?? []).filter((tip: string) => tip.trim()),
+      setResumeReviews(
+        (data.resumeReviews ?? []).filter(
+          (review: ResumeReview) => review.id && review.title,
+        ),
       );
     });
   }, []);
@@ -194,12 +219,39 @@ export default function UserDashboardPage() {
         <div className="rounded-3xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-slate-900/10">
           <h2 className="text-xl font-black text-slate-950">Resume Tips</h2>
           <div className="mt-5 space-y-3">
-            {resumeTips.map((tip) => (
-              <div key={tip} className="rounded-2xl bg-cyan-50/70 p-4 text-sm font-semibold leading-6 text-slate-700">
-                {tip}
-              </div>
+            {resumeReviews.map((review) => (
+              <button
+                key={review.id}
+                type="button"
+                className="flex w-full items-center justify-between gap-3 rounded-2xl bg-cyan-50/70 p-4 text-left text-sm font-black text-slate-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                onClick={() => setSelectedReview(review)}
+              >
+                <span className="min-w-0">
+                  <span className="block text-base text-slate-900">{review.title}</span>
+                  <span className="mt-1 block text-xs font-semibold text-slate-500">
+                    {review.reviewedDate} · {review.score}/100 · {review.label}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className={`hidden rounded-full px-2.5 py-1 text-[11px] font-black sm:inline-flex ${reviewStatusClasses(review.status)}`}>
+                    {review.status}
+                  </span>
+                <svg
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 text-cyan-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+                </span>
+              </button>
             ))}
-            {resumeTips.length === 0 && (
+            {resumeReviews.length === 0 && (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
                 Save your resume to receive an automatic, content-based analysis.
               </div>
@@ -234,6 +286,81 @@ export default function UserDashboardPage() {
           ))}
         </div>
       </section>
+
+      {selectedReview && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/35 px-4 backdrop-blur-sm">
+          <button
+            type="button"
+            aria-label="Close resume tip"
+            className="absolute inset-0 cursor-default"
+            onClick={() => setSelectedReview(null)}
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resume-review-title"
+            className="relative z-10 max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl shadow-slate-950/25"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-cyan-700">
+                  Resume analysis history
+                </p>
+                <h2 id="resume-review-title" className="mt-2 text-2xl font-black text-slate-950">
+                  {selectedReview.title}
+                </h2>
+                <p className="mt-1 text-sm font-semibold text-slate-500">
+                  {selectedReview.reviewedDate} · {selectedReview.score}/100 · {selectedReview.label}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                onClick={() => setSelectedReview(null)}
+              >
+                <svg
+                  aria-hidden="true"
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {selectedReview.recommendations.map((tip) => (
+                <div key={`${tip.title}-${tip.message}`} className="rounded-2xl bg-cyan-50 p-4">
+                  <h3 className="font-black text-slate-900">{tip.title}</h3>
+                  <p className="mt-1 text-sm font-semibold leading-7 text-slate-700">
+                    {tip.message}
+                  </p>
+                </div>
+              ))}
+              {selectedReview.recommendations.length === 0 && (
+                <div className="rounded-2xl bg-emerald-50 p-4 text-sm font-semibold leading-7 text-emerald-700">
+                  No major improvements were identified in this review.
+                </div>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Link
+                href="/user/resume"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-cyan-600 px-5 text-sm font-bold text-white transition hover:bg-cyan-700"
+                onClick={() => setSelectedReview(null)}
+              >
+                Update Resume
+              </Link>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
