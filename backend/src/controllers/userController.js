@@ -4,6 +4,8 @@ import Resume from "../models/Resume.js";
 import User from "../models/User.js";
 import { formatDate } from "../utils/formatDate.js";
 import { analyzeResume, automaticReviewStatus } from "../utils/resumeAnalysis.js";
+import { createAIResumeInsights } from "../utils/aiResumeInsights.js";
+import { effectiveJobStatus, isPastApplyBy } from "../utils/jobDeadline.js";
 
 function profileView(user, resume) {
   const analysis = resume ? analyzeResume(resume) : null;
@@ -20,7 +22,7 @@ function profileView(user, resume) {
   };
 }
 
-function jobView(job, match = 0) {
+function jobView(job, match = 0, saved = false) {
   return {
     id: job._id,
     title: job.title,
@@ -32,12 +34,13 @@ function jobView(job, match = 0) {
     match,
     type: job.type,
     posted: formatDate(job.createdAt),
-    status: job.status,
+    status: effectiveJobStatus(job),
     description: job.description,
     responsibilities: job.responsibilities,
     requirements: job.requirements,
     benefits: job.benefits,
     applyBy: job.applyBy,
+    saved,
   };
 }
 
@@ -205,6 +208,7 @@ export async function getUserDashboard(req, res, next) {
     ]);
 
     const jobMatches = jobs
+      .filter((job) => !isPastApplyBy(job.applyBy))
       .map((job) => ({ job, match: calculateJobMatch(job, req.user) }))
       .filter(({ match }) => match > 0)
       .sort((first, second) => second.match - first.match)
@@ -296,7 +300,37 @@ export async function updateUserPassword(req, res, next) {
 export async function getUserJobs(req, res, next) {
   try {
     const jobs = await Job.find().sort({ createdAt: -1 });
-    return res.json({ success: true, jobs: jobs.map(jobView) });
+    const savedJobIds = new Set((req.user.savedJobs || []).map(String));
+    return res.json({ success: true, jobs: jobs.map((job) => jobView(job, 0, savedJobIds.has(String(job._id)))) });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getSavedJobs(req, res, next) {
+  try {
+    const savedJobIds = (req.user.savedJobs || []).map(String);
+    const jobs = await Job.find({ _id: { $in: savedJobIds } }).sort({ createdAt: -1 });
+    return res.json({ success: true, jobs: jobs.map((job) => jobView(job, 0, true)) });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function saveJob(req, res, next) {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      res.status(404);
+      throw new Error("Job not found");
+    }
+    const user = await User.findById(req.user._id);
+    const alreadySaved = (user.savedJobs || []).some((id) => String(id) === String(job._id));
+    const shouldSave = req.body.saved !== false;
+    if (shouldSave && !alreadySaved) user.savedJobs.push(job._id);
+    if (!shouldSave && alreadySaved) user.savedJobs = user.savedJobs.filter((id) => String(id) !== String(job._id));
+    await user.save();
+    return res.json({ success: true, saved: shouldSave });
   } catch (error) {
     return next(error);
   }
@@ -314,6 +348,11 @@ export async function applyToJob(req, res, next) {
     if (job.status !== "Open") {
       res.status(400);
       throw new Error("This job is closed");
+    }
+
+    if (isPastApplyBy(job.applyBy)) {
+      res.status(400);
+      throw new Error("This job is closed because its application deadline has passed");
     }
 
     const resume = await findUserResume(req.user);
@@ -376,7 +415,30 @@ export async function getUserApplications(req, res, next) {
 export async function getUserResume(req, res, next) {
   try {
     const resume = await findUserResume(req.user);
-    return res.json({ success: true, resume: resumeView(resume, req.user), profile: profileView(req.user, resume) });
+    return res.json({
+      success: true,
+      resume: resumeView(resume, req.user),
+      profile: profileView(req.user, resume),
+      analysisHistory: reviewHistoryView(resume),
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getAIResumeInsights(req, res, next) {
+  try {
+    const resume = await findUserResume(req.user);
+    if (!resume) {
+      res.status(400);
+      throw new Error("Save your resume before generating AI insights");
+    }
+
+    const insights = await createAIResumeInsights({
+      ...resume.toObject(),
+      role: req.user.professionalRole,
+    });
+    return res.json({ success: true, insights });
   } catch (error) {
     return next(error);
   }

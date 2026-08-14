@@ -5,6 +5,7 @@ import Resume from "../models/Resume.js";
 import User from "../models/User.js";
 import { formatDate } from "../utils/formatDate.js";
 import { analyzeResume, automaticReviewStatus } from "../utils/resumeAnalysis.js";
+import { effectiveJobStatus } from "../utils/jobDeadline.js";
 
 function jobView(job) {
   return {
@@ -23,7 +24,7 @@ function jobView(job) {
     benefits: job.benefits,
     applicants: job.applicants,
     posted: formatDate(job.createdAt),
-    status: job.status,
+    status: effectiveJobStatus(job),
   };
 }
 
@@ -34,7 +35,7 @@ function companyView(company, jobs = []) {
     logo: company.logo,
     industry: company.industry,
     location: company.location,
-    jobs: jobs.filter((job) => job.company === company.name && job.status === "Open").length,
+    jobs: jobs.filter((job) => job.company === company.name && effectiveJobStatus(job) === "Open").length,
   };
 }
 
@@ -141,7 +142,7 @@ export async function getDashboard(req, res, next) {
       success: true,
       stats: [
         { label: "Total Users", value: String(users.length), detail: `${users.slice(0, 5).length} recent candidate accounts` },
-        { label: "Total Jobs", value: String(jobs.length), detail: `${jobs.filter((job) => job.status === "Open").length} currently open` },
+        { label: "Total Jobs", value: String(jobs.length), detail: `${jobs.filter((job) => effectiveJobStatus(job) === "Open").length} currently open` },
         { label: "Total Applications", value: String(applications.length), detail: `${applications.filter((application) => application.status === "Pending").length} pending review` },
       ],
       recentJobPosts: jobs.slice(0, 5).map((job) => `${job.company} posted ${job.title}.`),
