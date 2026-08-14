@@ -6,11 +6,13 @@ import { useEffect, useMemo, useState } from "react";
 import { getUserProfile, UserProfile } from "../../lib/user-api";
 
 const links = [
-  { href: "/user", label: "Dashboard" },
-  { href: "/user/jobs", label: "Jobs" },
-  { href: "/user/applications", label: "Applications" },
-  { href: "/user/resume", label: "Resume" },
-  { href: "/user/profile", label: "Profile" },
+  { href: "/user", label: "Dashboard", icon: "⌂" },
+  { href: "/user/resume/analyzer", label: "Resume Analyzer", icon: "◌" },
+  { href: "/user/resume", label: "Resume Builder", icon: "✦" },
+  { href: "/user/jobs", label: "Job Matches", icon: "⌕" },
+  { href: "/user/saved-jobs", label: "Saved Jobs", icon: "♡" },
+  { href: "/user/applications", label: "Applications", icon: "▤" },
+  { href: "/user/profile", label: "Profile", icon: "◎" },
 ];
 
 export default function UserLayout({
@@ -39,48 +41,46 @@ export default function UserLayout({
   }, []);
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#ecfeff_0%,#f8fafc_45%,#eef2ff_100%)] text-slate-950">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-cyan-100/80 bg-white/90 px-4 py-5 shadow-xl shadow-cyan-900/10 backdrop-blur-xl lg:flex lg:flex-col">
+    <main className="min-h-screen bg-[#f8fafc] text-slate-950">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[272px] border-r border-slate-200/80 bg-white px-4 py-5 lg:flex lg:flex-col">
         <Link
           href="/user"
-          className="rounded-3xl border border-cyan-100 bg-gradient-to-br from-white to-cyan-50 p-4 shadow-sm shadow-cyan-900/5"
+          className="rounded-2xl p-3"
         >
           <span className="flex items-center gap-3">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-cyan-600 to-indigo-600 text-sm font-black text-white shadow-lg shadow-cyan-500/25">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#111827] text-sm font-black text-white shadow-lg shadow-slate-900/15">
               JM
             </span>
             <span>
-              <span className="block text-xl font-black tracking-tight">
-                JobMatch
+              <span className="block text-lg font-black tracking-tight">
+                JobMatch <span className="text-indigo-600">AI</span>
               </span>
-              <span className="text-xs font-bold uppercase text-cyan-700">
-                Candidate
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Career workspace
               </span>
             </span>
           </span>
         </Link>
 
-        <nav className="mt-6 space-y-1.5">
+        <nav className="mt-7 space-y-1">
           {links.map((link) => {
-            const isActive =
-              link.href === "/user"
-                ? pathname === link.href
-                : pathname.startsWith(link.href);
+            const isActive = pathname === link.href;
 
             return (
               <Link
-                key={link.href}
+                key={link.label}
                 href={link.href}
-                className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-black transition ${
+                className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
                   isActive
-                    ? "bg-cyan-600 text-white shadow-lg shadow-cyan-500/20"
-                    : "text-slate-600 hover:bg-cyan-50 hover:text-cyan-700"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
+                <span className={`grid h-7 w-7 place-items-center rounded-lg text-sm ${isActive ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400"}`}>{link.icon}</span>
                 {link.label}
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    isActive ? "bg-white" : "bg-cyan-200"
+                  className={`ml-auto h-1.5 w-1.5 rounded-full ${
+                    isActive ? "bg-indigo-600" : "bg-transparent"
                   }`}
                 />
               </Link>
@@ -91,25 +91,27 @@ export default function UserLayout({
         <button
           type="button"
           onClick={() => setShowLogoutConfirm(true)}
-          className="mt-auto inline-flex h-11 w-full items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-sm font-black text-rose-600 transition hover:bg-rose-100"
+          className="mt-auto inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-bold text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
         >
           Logout
         </button>
       </aside>
 
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-cyan-100/80 bg-white/85 backdrop-blur-xl">
-          <div className="flex h-20 items-center justify-between gap-4 px-6">
+      <div className="lg:pl-[272px]">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+          <div className="flex h-[72px] items-center justify-between gap-4 px-6 lg:px-9">
             <Link href="/user" className="text-lg font-black lg:hidden">
               JobMatch
             </Link>
-            <div className="ml-auto flex items-center gap-3 rounded-full border border-cyan-100 bg-white px-3 py-2 shadow-sm">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-indigo-600 text-xs font-black text-white">
+            <div className="ml-auto flex items-center gap-4">
+              <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-indigo-600 text-xs font-black text-white">
                 {initials}
               </div>
               <div className="hidden text-sm sm:block">
                 <p className="font-bold">{profile?.name || ""}</p>
                 <p className="text-xs text-slate-500">{profile?.email || ""}</p>
+              </div>
               </div>
             </div>
           </div>
@@ -118,14 +120,11 @@ export default function UserLayout({
         <div className="block border-b border-cyan-100 bg-white px-4 py-3 lg:hidden">
           <div className="flex gap-2 overflow-x-auto">
             {links.map((link) => {
-              const isActive =
-                link.href === "/user"
-                  ? pathname === link.href
-                  : pathname.startsWith(link.href);
+              const isActive = pathname === link.href;
 
               return (
                 <Link
-                  key={link.href}
+                  key={link.label}
                   href={link.href}
                   className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold ${
                     isActive
@@ -140,7 +139,7 @@ export default function UserLayout({
           </div>
         </div>
 
-        <section className="px-6 py-8">{children}</section>
+        <section className="mx-auto max-w-[1600px] px-5 py-7 lg:px-9 lg:py-9">{children}</section>
       </div>
 
       {showLogoutConfirm && (

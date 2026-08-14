@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { applyToUserJob, getUserJobs, UserJob } from "../../../lib/user-api";
+import { applyToUserJob, getUserJobs, setUserJobSaved, UserJob } from "../../../lib/user-api";
+import { isJobClosed } from "../../../lib/job-deadline";
 
 type Job = UserJob;
 
@@ -45,6 +46,7 @@ function JobDetailsModal({
   const requirements = lines(job.requirements);
   const benefits = lines(job.benefits);
   const skills = skillList(job.skills);
+  const closed = isJobClosed(job);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 backdrop-blur-md">
@@ -214,7 +216,7 @@ function JobDetailsModal({
           </button>
           <button
             className="h-11 rounded-full bg-cyan-600 px-6 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isApplying}
+            disabled={isApplying || closed}
             onClick={async () => {
               try {
                 setIsApplying(true);
@@ -227,7 +229,7 @@ function JobDetailsModal({
               }
             }}
           >
-            {isApplying ? "Applying..." : "Apply Now"}
+            {closed ? "Closed" : isApplying ? "Applying..." : "Apply Now"}
           </button>
         </div>
       </section>
@@ -240,7 +242,9 @@ export default function UserJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const openJobs = jobs.filter((job) => job.status === "Open").length;
+  const [loadError, setLoadError] = useState("");
+  const [savingJobId, setSavingJobId] = useState("");
+  const openJobs = jobs.filter((job) => !isJobClosed(job)).length;
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredJobs = normalizedQuery
     ? jobs.filter((job) =>
@@ -251,11 +255,27 @@ export default function UserJobsPage() {
     : jobs;
 
   useEffect(() => {
-    getUserJobs().then((data) => setJobs(data.jobs));
+    getUserJobs()
+      .then((data) => {
+        setJobs(data.jobs);
+        const requestedJobId = new URLSearchParams(window.location.search).get("job");
+        if (requestedJobId) {
+          const requestedJob = data.jobs.find((job: Job) => job.id === requestedJobId);
+          if (requestedJob) setSelectedJob(requestedJob);
+        }
+      })
+      .catch((loadError) =>
+        setLoadError(loadError instanceof Error ? loadError.message : "Unable to load jobs"),
+      );
   }, []);
 
   return (
     <div className="space-y-7">
+      {loadError && (
+        <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
+          We couldn&apos;t load jobs right now. {loadError}
+        </div>
+      )}
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
         <div className="relative flex-1">
           <svg
@@ -304,7 +324,9 @@ export default function UserJobsPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        {filteredJobs.map((job) => (
+        {filteredJobs.map((job) => {
+          const closed = isJobClosed(job);
+          return (
           <article
             key={job.id}
             className="rounded-3xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-slate-900/10 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-900/10"
@@ -323,11 +345,35 @@ export default function UserJobsPage() {
                   </p>
                 </div>
               </div>
-              <span
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-black ${statusClasses(job.status)}`}
-              >
-                {job.status}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  aria-label={job.saved ? `Remove ${job.title} from saved jobs` : `Save ${job.title}`}
+                  title={job.saved ? "Remove from saved jobs" : "Save job"}
+                  disabled={savingJobId === job.id}
+                  className={`grid h-10 w-10 place-items-center rounded-full border transition disabled:opacity-50 ${job.saved ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-400 hover:border-indigo-200 hover:text-indigo-600"}`}
+                  onClick={async () => {
+                    const saved = !job.saved;
+                    try {
+                      setSavingJobId(job.id);
+                      setLoadError("");
+                      await setUserJobSaved(job.id, saved);
+                      setJobs((currentJobs) => currentJobs.map((item) => item.id === job.id ? { ...item, saved } : item));
+                    } catch (saveError) {
+                      setLoadError(saveError instanceof Error ? saveError.message : "Unable to save job");
+                    } finally {
+                      setSavingJobId("");
+                    }
+                  }}
+                >
+                  <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill={job.saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" />
+                  </svg>
+                </button>
+                <span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusClasses(closed ? "Closed" : "Open")}`}>
+                  {closed ? "Closed" : "Open"}
+                </span>
+              </div>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -386,18 +432,19 @@ export default function UserJobsPage() {
               </p>
               <button
                 className={`h-11 rounded-full px-6 text-sm font-black transition ${
-                  job.status === "Open"
+                  !closed
                     ? "bg-cyan-600 text-white shadow-lg shadow-cyan-500/20 hover:bg-cyan-700"
                     : "cursor-not-allowed bg-slate-100 text-slate-400"
                 }`}
-                disabled={job.status !== "Open"}
+                disabled={closed}
                 onClick={() => setSelectedJob(job)}
               >
-                {job.status === "Open" ? "Apply Now" : "Closed"}
+                {closed ? "Closed" : "Apply Now"}
               </button>
             </div>
           </article>
-        ))}
+          );
+        })}
         {filteredJobs.length === 0 && (
           <div className="rounded-3xl border border-dashed border-cyan-200 bg-white p-10 text-center xl:col-span-2">
             <p className="text-lg font-black text-slate-800">
@@ -420,7 +467,11 @@ export default function UserJobsPage() {
       {selectedJob && (
         <JobDetailsModal
           job={selectedJob}
-          onClose={() => setSelectedJob(null)}
+          onClose={() => {
+            setSelectedJob(null);
+            const openedFromSavedJobs = new URLSearchParams(window.location.search).get("from") === "saved";
+            if (openedFromSavedJobs) router.push("/user/saved-jobs");
+          }}
           onApplied={() => {
             sessionStorage.setItem(
               "jobmatchApplicationToast",

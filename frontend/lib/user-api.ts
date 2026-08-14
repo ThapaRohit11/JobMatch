@@ -29,6 +29,7 @@ export type UserJob = {
   requirements?: string;
   benefits?: string;
   applyBy?: string;
+  saved?: boolean;
 };
 
 export type UserApplication = {
@@ -48,6 +49,17 @@ export function getUserDashboard() {
 
 export function getUserJobs() {
   return authorizedRequest("/api/user/jobs");
+}
+
+export function getSavedUserJobs() {
+  return authorizedRequest("/api/user/saved-jobs");
+}
+
+export function setUserJobSaved(id: string, saved: boolean) {
+  return authorizedRequest(`/api/user/jobs/${id}/save`, {
+    method: "PUT",
+    body: JSON.stringify({ saved }),
+  });
 }
 
 export function applyToUserJob(id: string) {
@@ -82,6 +94,10 @@ export function updateUserPassword(payload: {
 
 export function getUserResume() {
   return authorizedRequest("/api/user/resume");
+}
+
+export function getAIResumeInsights() {
+  return authorizedRequest("/api/user/resume/ai-insights");
 }
 
 export function saveUserResume(payload: Record<string, unknown>) {

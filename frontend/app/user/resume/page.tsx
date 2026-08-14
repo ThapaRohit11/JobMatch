@@ -5,6 +5,17 @@ import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
 import { getUserResume, saveUserResume, UserProfile } from "../../../lib/user-api";
 
+const resumeSections = [
+  { label: "Personal info", id: "personal-info" },
+  { label: "Summary", id: "summary" },
+  { label: "Work experience", id: "work-experience" },
+  { label: "Education", id: "education" },
+  { label: "Skills", id: "skills" },
+  { label: "Projects", id: "projects" },
+  { label: "Certifications", id: "certifications" },
+  { label: "Awards", id: "awards" },
+];
+
 export default function UserResumePage() {
   const formRef = useRef<HTMLFormElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -42,6 +53,7 @@ export default function UserResumePage() {
   const [projectCount, setProjectCount] = useState(1);
   const [certificationCount, setCertificationCount] = useState(1);
   const [awardCount, setAwardCount] = useState(1);
+  const [activeSection, setActiveSection] = useState("personal-info");
 
   useEffect(() => {
     getUserResume().then((data) => {
@@ -68,6 +80,8 @@ export default function UserResumePage() {
       setProjectCount(Math.max(data.resume.projects?.length || 1, 1));
       setCertificationCount(Math.max(data.resume.certifications?.length || 1, 1));
       setAwardCount(Math.max(data.resume.awards?.length || 1, 1));
+    }).catch((error) => {
+      setMessage(error instanceof Error ? error.message : "Unable to load your resume");
     });
   }, []);
 
@@ -313,14 +327,33 @@ export default function UserResumePage() {
         </button>
       </div>
 
-      <section className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid gap-6 2xl:grid-cols-[190px_minmax(0,1fr)_minmax(380px,0.9fr)]">
+        <aside className="hidden 2xl:block">
+          <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <p className="px-3 pb-3 pt-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Resume sections</p>
+            {resumeSections.map((section, index) => (
+              <button
+                key={section.id}
+                type="button"
+                aria-current={activeSection === section.id ? "true" : undefined}
+                onClick={() => {
+                  setActiveSection(section.id);
+                  document.getElementById(section.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold transition ${activeSection === section.id ? "bg-indigo-50 text-indigo-700" : "text-slate-500 hover:bg-slate-50"}`}
+              >
+                <span className="text-slate-400">{String(index + 1).padStart(2, "0")}</span>{section.label}
+              </button>
+            ))}
+          </div>
+        </aside>
         <form
           ref={formRef}
           onSubmit={handleSave}
-          className="space-y-5 rounded-3xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-slate-900/10"
+          className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/5 lg:p-6"
         >
           {formSections.map((section) => (
-            <section key={section.title} className="rounded-2xl bg-slate-50 p-5">
+            <section id="personal-info" key={section.title} className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
               <h2 className="text-lg font-black text-slate-950">
                 {section.title}
               </h2>
@@ -355,7 +388,7 @@ export default function UserResumePage() {
             </section>
           ))}
 
-          <section className="rounded-2xl bg-slate-50 p-5">
+          <section id="summary" className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
             <h2 className="text-lg font-black text-slate-950">
               Professional Summary
             </h2>
@@ -366,7 +399,7 @@ export default function UserResumePage() {
             />
           </section>
 
-          <section className="rounded-2xl bg-slate-50 p-5">
+          <section id="skills" className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
             <h2 className="text-lg font-black text-slate-950">
               Skills
             </h2>
@@ -390,7 +423,7 @@ export default function UserResumePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl bg-slate-50 p-5">
+          <section id="work-experience" className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-slate-950">
                 Work Experience
@@ -457,7 +490,7 @@ export default function UserResumePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl bg-slate-50 p-5">
+          <section id="projects" className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-slate-950">Projects</h2>
               {addButton("Add project", () =>
@@ -478,7 +511,7 @@ export default function UserResumePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl bg-slate-50 p-5">
+          <section id="education" className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-slate-950">Education</h2>
               {addButton("Add education", () =>
@@ -515,7 +548,7 @@ export default function UserResumePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl bg-slate-50 p-5">
+          <section id="certifications" className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-slate-950">
                 Certifications
@@ -538,7 +571,7 @@ export default function UserResumePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl bg-slate-50 p-5">
+          <section id="awards" className="scroll-mt-24 rounded-2xl bg-slate-50 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-slate-950">
                 Awards / Achievements
@@ -580,10 +613,15 @@ export default function UserResumePage() {
           </div>
         </form>
 
-        <aside className="rounded-3xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-slate-900/10">
+        <aside className="space-y-5">
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
+            <div><p className="text-sm font-black text-slate-900">Live preview</p><p className="text-xs font-medium text-slate-500">Modern · ATS Friendly</p></div>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Auto-saved</span>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-100/70 p-4 shadow-sm shadow-slate-900/5 lg:p-6">
           <div
             ref={previewRef}
-            className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"
+            className="mx-auto max-w-[794px] rounded-sm border border-slate-200 bg-white p-7 shadow-md shadow-slate-300/50"
           >
             <header className="border-b border-slate-200 pb-5 text-center">
               <h2 className="text-3xl font-black uppercase tracking-wide text-slate-950">
@@ -772,6 +810,7 @@ export default function UserResumePage() {
                 </section>
               )}
             </div>
+          </div>
           </div>
         </aside>
       </section>

@@ -1,9 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap");
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-inter: Inter, Arial, Helvetica, sans-serif;
+  --font-inter: "DM Sans", Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
@@ -13,15 +14,14 @@
   --font-mono: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
+
+* { box-sizing: border-box; }
+
+::selection { background: #dbeafe; color: #172554; }
+
+h1, h2, h3, h4 { font-family: "Manrope", "DM Sans", sans-serif; }

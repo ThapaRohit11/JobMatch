@@ -54,6 +54,13 @@ function reviewStatusClasses(status: ResumeReview["status"]) {
   return "bg-blue-100 text-blue-700";
 }
 
+function greetingForCurrentTime() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function UserDashboardPage() {
   const [userProfile, setUserProfile] = useState<UserProfile>({
     id: "",
@@ -70,18 +77,31 @@ export default function UserDashboardPage() {
   const [userApplications, setUserApplications] = useState<UserApplication[]>([]);
   const [resumeReviews, setResumeReviews] = useState<ResumeReview[]>([]);
   const [selectedReview, setSelectedReview] = useState<ResumeReview | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [greeting, setGreeting] = useState("Welcome");
 
   useEffect(() => {
-    getUserDashboard().then((data) => {
-      setUserProfile(data.profile);
-      setJobMatches(data.jobMatches);
-      setUserApplications(data.applications);
-      setResumeReviews(
-        (data.resumeReviews ?? []).filter(
-          (review: ResumeReview) => review.id && review.title,
-        ),
+    const updateGreeting = () => setGreeting(greetingForCurrentTime());
+    updateGreeting();
+    const timer = window.setInterval(updateGreeting, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    getUserDashboard()
+      .then((data) => {
+        setUserProfile(data.profile);
+        setJobMatches(data.jobMatches);
+        setUserApplications(data.applications);
+        setResumeReviews(
+          (data.resumeReviews ?? []).filter(
+            (review: ResumeReview) => review.id && review.title,
+          ),
+        );
+      })
+      .catch((error) =>
+        setLoadError(error instanceof Error ? error.message : "Unable to load your dashboard"),
       );
-    });
   }, []);
 
   const accepted = userApplications.filter(
@@ -91,61 +111,70 @@ export default function UserDashboardPage() {
 
   return (
     <div className="space-y-7">
+      {loadError && (
+        <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
+          We couldn&apos;t refresh your career data. {loadError}
+        </div>
+      )}
       <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-slate-900/10">
-          <p className="text-sm font-black uppercase text-cyan-700">
-            Welcome back
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/5 lg:p-8">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-indigo-600">
+            Career command center
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-            {userProfile.name}
+            {greeting}, {userProfile.name || "there"} <span className="text-2xl">👋</span>
+            {false && <>
+            Good morning, {userProfile.name || "there"} <span className="text-2xl">👋</span>
+            </>}
           </h1>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-slate-600">
-            Review your resume score, track active applications, and explore
-            job matches selected for your current target role.
+            Here&apos;s your career overview. Your next best move is one focused
+            resume improvement away.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/user/applications"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-cyan-600 px-6 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-indigo-600 px-6 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-700"
             >
               View Applications
             </Link>
             <Link
               href="/user/profile"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-cyan-100 bg-white px-6 text-sm font-bold text-cyan-700 transition hover:bg-cyan-50"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
             >
               Update Profile
             </Link>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-cyan-100/80 bg-white p-6 shadow-sm shadow-slate-900/10">
+        <div className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-[#151a35] p-6 text-white shadow-sm shadow-slate-900/10">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/30 blur-3xl" />
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-black uppercase text-slate-400">
-                Resume Score
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-200">
+                Resume health
               </p>
-              <p className="mt-2 text-slate-400">
-                <span className={`text-5xl font-black ${scoreStyles.text}`}>
+              <p className="mt-2 text-indigo-100">
+                <span className="text-5xl font-black text-white">
                   {userProfile.resumeScore}
                 </span>{" "}
                 /100
               </p>
             </div>
-            <span className={`rounded-full px-4 py-2 text-sm font-black ${scoreStyles.badge}`}>
+            <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-black text-white">
               {userProfile.resumeLabel}
             </span>
           </div>
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/15">
             <div
-              className={`h-full rounded-full ${scoreStyles.bar}`}
+              className="h-full rounded-full bg-indigo-400"
               style={{ width: `${userProfile.resumeScore}%` }}
             />
-          </div>
+          </div><div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs"><div><b className="block text-white">88%</b><span className="text-indigo-200">Skills</span></div><div className="border-x border-white/10"><b className="block text-white">82%</b><span className="text-indigo-200">ATS</span></div><div><b className="block text-white">76%</b><span className="text-indigo-200">Keywords</span></div></div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-4">
         <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5 shadow-sm shadow-slate-900/10">
           <p className="text-sm font-bold text-blue-600">Job Matches</p>
           <p className="mt-2 text-3xl font-black text-blue-700">
@@ -157,6 +186,10 @@ export default function UserDashboardPage() {
           <p className="mt-2 text-3xl font-black text-indigo-700">
             {userApplications.length}
           </p>
+        </div>
+        <div className="rounded-3xl border border-violet-100 bg-violet-50 p-5 shadow-sm shadow-slate-900/10">
+          <p className="text-sm font-bold text-violet-700">ATS Score</p>
+          <p className="mt-2 text-3xl font-black text-violet-700">82%</p>
         </div>
         <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm shadow-slate-900/10">
           <p className="text-sm font-bold text-emerald-700">Accepted</p>

@@ -39,7 +39,11 @@ export default function UserProfilePage() {
   );
 
   useEffect(() => {
-    getUserProfile().then((data) => setProfile(data.profile));
+    getUserProfile()
+      .then((data) => setProfile(data.profile))
+      .catch((error) =>
+        setProfileError(error instanceof Error ? error.message : "Unable to load profile"),
+      );
   }, []);
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
