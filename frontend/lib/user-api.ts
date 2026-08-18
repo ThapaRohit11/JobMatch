@@ -10,6 +10,7 @@ export type UserProfile = {
   resumeScore: number;
   resumeLabel: string;
   skills: string;
+  avatar?: string;
 };
 
 export type UserJob = {
@@ -81,6 +82,13 @@ export function updateUserProfile(payload: Partial<UserProfile>) {
   });
 }
 
+export function updateUserAvatar(avatar: string) {
+  return authorizedRequest("/api/user/profile/avatar", {
+    method: "PUT",
+    body: JSON.stringify({ avatar }),
+  });
+}
+
 export function updateUserPassword(payload: {
   oldPassword: string;
   newPassword: string;
@@ -104,5 +112,17 @@ export function saveUserResume(payload: Record<string, unknown>) {
   return authorizedRequest("/api/user/resume", {
     method: "PUT",
     body: JSON.stringify(payload),
+  });
+}
+
+export type ChatMessage = {
+  role: "user" | "assistant";
+  text: string;
+};
+
+export function sendChatMessage(messages: ChatMessage[]) {
+  return authorizedRequest("/api/user/chat", {
+    method: "POST",
+    body: JSON.stringify({ messages }),
   });
 }

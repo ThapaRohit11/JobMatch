@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import { formatDate } from "../utils/formatDate.js";
 import { analyzeResume, automaticReviewStatus } from "../utils/resumeAnalysis.js";
 import { createAIResumeInsights } from "../utils/aiResumeInsights.js";
+import { chatWithAssistant } from "../utils/chatAssistant.js";
 import { effectiveJobStatus, isPastApplyBy } from "../utils/jobDeadline.js";
 
 function profileView(user, resume) {
@@ -19,8 +20,11 @@ function profileView(user, resume) {
     resumeScore: analysis?.score || 0,
     resumeLabel: analysis?.label || "No resume",
     skills: user.skills || "",
+    avatar: user.avatar || "",
   };
 }
+
+const MAX_AVATAR_LENGTH = 2_000_000;
 
 function jobView(job, match = 0, saved = false) {
   return {
@@ -42,6 +46,17 @@ function jobView(job, match = 0, saved = false) {
     applyBy: job.applyBy,
     saved,
   };
+}
+
+function parseExperience(value) {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function normalize(value = "") {
@@ -113,7 +128,7 @@ function resumeView(resume, user) {
   return {
     id: resume?._id || "",
     summary: resume?.summary || "",
-    experience: resume?.experience ? JSON.parse(resume.experience) : [],
+    experience: parseExperience(resume?.experience),
     education: resume?.education || "",
     projects: Array.isArray(resume?.projects) ? resume.projects : [],
     skills: resume?.skills || "",
@@ -258,6 +273,33 @@ export async function updateUserProfile(req, res, next) {
     user.professionalRole = req.body.role || "";
     user.location = req.body.location || "";
     user.skills = req.body.skills || "";
+    await user.save();
+
+    const resume = await findUserResume(user);
+    return res.json({ success: true, profile: profileView(user, resume) });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function updateUserAvatar(req, res, next) {
+  try {
+    const { avatar } = req.body;
+
+    if (avatar) {
+      if (typeof avatar !== "string" || !/^data:image\/(png|jpe?g|webp|gif);base64,/.test(avatar)) {
+        res.status(400);
+        throw new Error("Avatar must be a valid image");
+      }
+
+      if (avatar.length > MAX_AVATAR_LENGTH) {
+        res.status(400);
+        throw new Error("Avatar image is too large");
+      }
+    }
+
+    const user = await User.findById(req.user._id);
+    user.avatar = avatar || "";
     await user.save();
 
     const resume = await findUserResume(user);
@@ -444,8 +486,51 @@ export async function getAIResumeInsights(req, res, next) {
   }
 }
 
+export async function chatWithAssistantController(req, res, next) {
+  try {
+    const messages = Array.isArray(req.body.messages) ? req.body.messages : [];
+    const history = messages.filter(
+      (message) =>
+        (message?.role === "user" || message?.role === "assistant") &&
+        typeof message.text === "string" &&
+        message.text.trim(),
+    );
+
+    if (!history.length) {
+      res.status(400);
+      throw new Error("A message is required");
+    }
+
+    const reply = await chatWithAssistant({ user: req.user, history });
+    return res.json({ success: true, reply });
+  } catch (error) {
+    if (error.status) res.status(error.status);
+    return next(error);
+  }
+}
+
 export async function saveUserResume(req, res, next) {
   try {
+    const role = (req.body.role || "").trim();
+    const location = (req.body.location || "").trim();
+    const skills = (req.body.skills || "").trim();
+    let profileChanged = false;
+    if (role && role !== req.user.professionalRole) {
+      req.user.professionalRole = role;
+      profileChanged = true;
+    }
+    if (location && location !== req.user.location) {
+      req.user.location = location;
+      profileChanged = true;
+    }
+    if (skills && skills !== req.user.skills) {
+      req.user.skills = skills;
+      profileChanged = true;
+    }
+    if (profileChanged) {
+      await req.user.save();
+    }
+
     const payload = {
       user: req.user._id,
       candidate: req.user.name,

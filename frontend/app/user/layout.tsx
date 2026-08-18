@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getUserProfile, UserProfile } from "../../lib/user-api";
+import ChatWidget from "./ChatWidget";
 
 const links = [
   { href: "/user", label: "Dashboard", icon: "⌂" },
@@ -21,8 +22,15 @@ export default function UserLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+  const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  function handleLogout() {
+    localStorage.removeItem("jobmatchToken");
+    localStorage.removeItem("jobmatchUser");
+    router.push("/login");
+  }
   const initials = useMemo(
     () =>
       profile?.name
@@ -105,8 +113,13 @@ export default function UserLayout({
             </Link>
             <div className="ml-auto flex items-center gap-4">
               <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-indigo-600 text-xs font-black text-white">
-                {initials}
+              <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-indigo-600 text-xs font-black text-white">
+                {profile?.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profile.avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
               </div>
               <div className="hidden text-sm sm:block">
                 <p className="font-bold">{profile?.name || ""}</p>
@@ -190,16 +203,19 @@ export default function UserLayout({
               >
                 Cancel
               </button>
-              <Link
-                href="/login"
+              <button
+                type="button"
+                onClick={handleLogout}
                 className="inline-flex h-11 items-center justify-center rounded-full bg-rose-600 px-5 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700"
               >
                 Logout
-              </Link>
+              </button>
             </div>
           </section>
         </div>
       )}
+
+      <ChatWidget />
     </main>
   );
 }

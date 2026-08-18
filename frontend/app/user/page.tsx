@@ -170,7 +170,7 @@ export default function UserDashboardPage() {
               className="h-full rounded-full bg-indigo-400"
               style={{ width: `${userProfile.resumeScore}%` }}
             />
-          </div><div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs"><div><b className="block text-white">88%</b><span className="text-indigo-200">Skills</span></div><div className="border-x border-white/10"><b className="block text-white">82%</b><span className="text-indigo-200">ATS</span></div><div><b className="block text-white">76%</b><span className="text-indigo-200">Keywords</span></div></div>
+          </div>
         </div>
       </section>
 
@@ -189,7 +189,7 @@ export default function UserDashboardPage() {
         </div>
         <div className="rounded-3xl border border-violet-100 bg-violet-50 p-5 shadow-sm shadow-slate-900/10">
           <p className="text-sm font-bold text-violet-700">ATS Score</p>
-          <p className="mt-2 text-3xl font-black text-violet-700">82%</p>
+          <p className="mt-2 text-3xl font-black text-violet-700">{userProfile.resumeScore}%</p>
         </div>
         <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm shadow-slate-900/10">
           <p className="text-sm font-bold text-emerald-700">Accepted</p>

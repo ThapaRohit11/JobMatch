@@ -12,7 +12,7 @@ type Analysis = {
   recommendations: Recommendation[];
   strengths?: string[];
   breakdown?: Record<string, number>;
-  provider?: "openai" | "rules";
+  provider?: "gemini" | "rules";
   note?: string;
 };
 type AnalysisHistoryItem = {
@@ -90,7 +90,7 @@ export default function ResumeAnalyzerPage() {
     try {
       const data = await getAIResumeInsights();
       setAnalysis(data.insights);
-      setAiStatus(data.insights.provider === "openai" ? "Fresh AI insights generated from your saved resume." : data.insights.note || "Showing built-in resume insights.");
+      setAiStatus(data.insights.provider === "gemini" ? "Fresh AI insights generated from your saved resume." : data.insights.note || "Showing built-in resume insights.");
     } catch (reason) {
       setAiStatus(reason instanceof Error ? reason.message : "Unable to generate AI insights.");
     } finally {
@@ -130,7 +130,7 @@ export default function ResumeAnalyzerPage() {
                 <p className="mt-3 leading-7 text-slate-300">{analysis.summary}</p>
                 <div className="mt-4 flex items-center gap-2 text-xs font-bold text-slate-300">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                  {analysis.provider === "openai" ? "AI-powered review" : "Analysis of your latest saved resume"}
+                  {analysis.provider === "gemini" ? "AI-powered review" : "Analysis of your latest saved resume"}
                 </div>
               </div>
             </div>
