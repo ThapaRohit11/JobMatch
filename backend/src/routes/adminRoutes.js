@@ -4,6 +4,7 @@ import {
   createJob,
   deleteCompany,
   deleteJob,
+  deleteUser,
   getApplications,
   getCompanies,
   getDashboard,
@@ -23,6 +24,7 @@ router.use(protect, authorize("admin"));
 
 router.get("/dashboard", getDashboard);
 router.get("/users", getUsers);
+router.delete("/users/:id", deleteUser);
 
 router.route("/jobs").get(getJobs).post(createJob);
 router.route("/jobs/:id").put(updateJob).delete(deleteJob);

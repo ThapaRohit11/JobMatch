@@ -64,7 +64,6 @@ function EditJobForm({
   onSaved: (job: Job) => void;
 }) {
   const [selectedCompanyName, setSelectedCompanyName] = useState(job.company);
-  const [message, setMessage] = useState("");
   const selectedCompany =
     companies.find((company) => company.name === selectedCompanyName) ??
     companies[0];
@@ -86,7 +85,6 @@ function EditJobForm({
     });
 
     onSaved(data.job);
-    setMessage("Job updated successfully");
   }
 
   return (
@@ -210,11 +208,6 @@ function EditJobForm({
               defaultValue={job.benefits || "Health and wellness coverage\nPaid time off\nLearning budget\nFlexible working hours"}
             />
           </label>
-          {message && (
-            <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 lg:col-span-2">
-              {message}
-            </p>
-          )}
           <div className="flex flex-wrap gap-3 lg:col-span-2">
             <button className="h-12 rounded-full bg-cyan-600 px-7 text-sm font-bold text-white shadow-xl shadow-cyan-500/25 transition hover:bg-cyan-700">
               Save Changes
@@ -323,7 +316,7 @@ export default function AdminJobsPage() {
           setJobs((current) =>
             current.map((job) => (job.id === updatedJob.id ? updatedJob : job)),
           );
-          setEditingJob(updatedJob);
+          setEditingJob(null);
         }}
       />
     );
