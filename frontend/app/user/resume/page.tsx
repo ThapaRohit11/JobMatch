@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { Dispatch, FormEvent, SetStateAction, useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
 import { getUserResume, saveUserResume, UserProfile } from "../../../lib/user-api";
@@ -48,12 +48,25 @@ export default function UserResumePage() {
     awards: [] as string[],
   });
   const [message, setMessage] = useState("");
-  const [educationCount, setEducationCount] = useState(1);
-  const [experienceCount, setExperienceCount] = useState(1);
-  const [projectCount, setProjectCount] = useState(1);
-  const [certificationCount, setCertificationCount] = useState(1);
-  const [awardCount, setAwardCount] = useState(1);
+  const experienceIdCounter = useRef(0);
+  const [experienceIds, setExperienceIds] = useState<number[]>([0]);
+  const educationIdCounter = useRef(0);
+  const [educationIds, setEducationIds] = useState<number[]>([0]);
+  const projectIdCounter = useRef(0);
+  const [projectIds, setProjectIds] = useState<number[]>([0]);
+  const certificationIdCounter = useRef(0);
+  const [certificationIds, setCertificationIds] = useState<number[]>([0]);
+  const awardIdCounter = useRef(0);
+  const [awardIds, setAwardIds] = useState<number[]>([0]);
   const [activeSection, setActiveSection] = useState("personal-info");
+
+  function newIds(counterRef: { current: number }, count: number) {
+    return Array.from({ length: count }, () => counterRef.current++);
+  }
+
+  function removeItem(setIds: Dispatch<SetStateAction<number[]>>, id: number) {
+    setIds((ids) => ids.filter((existingId) => existingId !== id));
+  }
 
   useEffect(() => {
     getUserResume().then((data) => {
@@ -75,11 +88,11 @@ export default function UserResumePage() {
         certifications: data.resume.certifications || [],
         awards: data.resume.awards || [],
       });
-      setExperienceCount(Math.max(data.resume.experience?.length || 1, 1));
-      setEducationCount(Math.max(data.resume.educationEntries?.length || 1, 1));
-      setProjectCount(Math.max(data.resume.projects?.length || 1, 1));
-      setCertificationCount(Math.max(data.resume.certifications?.length || 1, 1));
-      setAwardCount(Math.max(data.resume.awards?.length || 1, 1));
+      setExperienceIds(newIds(experienceIdCounter, Math.max(data.resume.experience?.length || 1, 1)));
+      setEducationIds(newIds(educationIdCounter, Math.max(data.resume.educationEntries?.length || 1, 1)));
+      setProjectIds(newIds(projectIdCounter, Math.max(data.resume.projects?.length || 1, 1)));
+      setCertificationIds(newIds(certificationIdCounter, Math.max(data.resume.certifications?.length || 1, 1)));
+      setAwardIds(newIds(awardIdCounter, Math.max(data.resume.awards?.length || 1, 1)));
     }).catch((error) => {
       setMessage(error instanceof Error ? error.message : "Unable to load your resume");
     });
@@ -91,7 +104,7 @@ export default function UserResumePage() {
       fields: [
         { label: "Full name", name: "fullName", value: userProfile.name, readOnly: true },
         { label: "Email", name: "contactEmail", value: userProfile.email, readOnly: true },
-        { label: "Professional title", name: "role", value: userProfile.role, readOnly: true },
+        { label: "Professional title", name: "role", value: resumeBuilderData.role || userProfile.role },
         { label: "Phone", name: "phone", value: resumeBuilderData.phone },
         { label: "Location", name: "location", value: resumeBuilderData.location || userProfile.location },
         { label: "Portfolio / LinkedIn", name: "portfolio", value: resumeBuilderData.portfolio },
@@ -238,11 +251,11 @@ export default function UserResumePage() {
       certifications: [],
       awards: [],
     }));
-    setEducationCount(1);
-    setExperienceCount(1);
-    setProjectCount(1);
-    setCertificationCount(1);
-    setAwardCount(1);
+    setExperienceIds(newIds(experienceIdCounter, 1));
+    setEducationIds(newIds(educationIdCounter, 1));
+    setProjectIds(newIds(projectIdCounter, 1));
+    setCertificationIds(newIds(certificationIdCounter, 1));
+    setAwardIds(newIds(awardIdCounter, 1));
   };
 
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
@@ -254,17 +267,17 @@ export default function UserResumePage() {
     const summary = formRef.current.querySelector<HTMLTextAreaElement>("[name='summary']")?.value || "";
     const skills = inputValue("technicalSkills");
     const softSkills = inputValue("softSkills");
-    const projects = Array.from({ length: projectCount }, (_, index) =>
+    const projects = Array.from({ length: projectIds.length }, (_, index) =>
       formRef.current?.querySelector<HTMLTextAreaElement>(`[name='project-${index}']`)?.value.trim() || "",
     ).filter(Boolean);
-    const education = Array.from({ length: educationCount }, (_, index) => ({
+    const education = Array.from({ length: educationIds.length }, (_, index) => ({
       degree: inputValue(`educationDegree-${index}`),
       school: inputValue(`educationSchool-${index}`),
       started: inputValue(`educationStarted-${index}`),
       graduation: inputValue(`educationGraduation-${index}`),
       gpa: inputValue(`educationGpa-${index}`),
     })).filter((item) => Object.values(item).some(Boolean));
-    const experience = Array.from({ length: experienceCount }, (_, index) => ({
+    const experience = Array.from({ length: experienceIds.length }, (_, index) => ({
       role: inputValue(`experienceRole-${index}`),
       company: inputValue(`experienceCompany-${index}`),
       period: inputValue(`experiencePeriod-${index}`),
@@ -272,11 +285,11 @@ export default function UserResumePage() {
       detail: formRef.current?.querySelector<HTMLTextAreaElement>(`[name='experienceDetail-${index}']`)?.value || "",
     })).filter((item) => Object.values(item).some(Boolean));
     const certifications = Array.from(
-      { length: certificationCount },
+      { length: certificationIds.length },
       (_, index) => inputValue(`certification-${index}`),
     ).filter(Boolean);
     const awards = Array.from(
-      { length: awardCount },
+      { length: awardIds.length },
       (_, index) => inputValue(`award-${index}`),
     ).filter(Boolean);
 
@@ -429,17 +442,29 @@ export default function UserResumePage() {
                 Work Experience
               </h2>
               {addButton("Add experience", () =>
-                setExperienceCount((count) => count + 1),
+                setExperienceIds((ids) => [...ids, experienceIdCounter.current++]),
               )}
             </div>
             <div className="mt-4 space-y-4">
-              {Array.from({ length: experienceCount }, (_, index) => {
+              {experienceIds.map((id, index) => {
                 const item = resumeBuilderData.experience[index];
                 return (
                 <div
-                  key={`experience-${index}`}
+                  key={id}
                   className="grid gap-4 rounded-2xl border border-cyan-100 bg-white p-4 md:grid-cols-2"
                 >
+                  <div className="flex items-center justify-between md:col-span-2">
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                      Experience {index + 1}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(setExperienceIds, id)}
+                      className="text-xs font-bold text-rose-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
                   <label className="text-sm font-bold text-slate-800">
                     Job title
                     <input
@@ -494,19 +519,35 @@ export default function UserResumePage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-slate-950">Projects</h2>
               {addButton("Add project", () =>
-                setProjectCount((count) => count + 1),
+                setProjectIds((ids) => [...ids, projectIdCounter.current++]),
               )}
             </div>
             <div className="mt-4 space-y-4">
-              {Array.from({ length: projectCount }, (_, index) => (
-                <textarea
-                  key={`project-${index}`}
-                  aria-label={`Project ${index + 1}`}
-                  placeholder="Describe the project, technologies used, and impact"
-                  name={`project-${index}`}
-                  className="min-h-24 w-full rounded-xl border border-cyan-100 bg-white px-4 py-3 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                  defaultValue={resumeBuilderData.projects[index] ?? ""}
-                />
+              {projectIds.map((id, index) => (
+                <div
+                  key={id}
+                  className="rounded-2xl border border-cyan-100 bg-white p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                      Project {index + 1}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(setProjectIds, id)}
+                      className="text-xs font-bold text-rose-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <textarea
+                    aria-label={`Project ${index + 1}`}
+                    placeholder="Describe the project, technologies used, and impact"
+                    name={`project-${index}`}
+                    className="mt-2 min-h-24 w-full rounded-xl border border-cyan-100 bg-white px-4 py-3 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    defaultValue={resumeBuilderData.projects[index] ?? ""}
+                  />
+                </div>
               ))}
             </div>
           </section>
@@ -515,15 +556,28 @@ export default function UserResumePage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-slate-950">Education</h2>
               {addButton("Add education", () =>
-                setEducationCount((count) => count + 1),
+                setEducationIds((ids) => [...ids, educationIdCounter.current++]),
               )}
             </div>
             <div className="mt-4 space-y-4">
-              {Array.from({ length: educationCount }, (_, index) => (
+              {educationIds.map((id, index) => (
                 <div
-                  key={`education-${index}`}
-                  className="grid gap-4 rounded-2xl border border-cyan-100 bg-white p-4 md:grid-cols-2"
+                  key={id}
+                  className="rounded-2xl border border-cyan-100 bg-white p-4"
                 >
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                      Education {index + 1}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(setEducationIds, id)}
+                      className="text-xs font-bold text-rose-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="mt-2 grid gap-4 md:grid-cols-2">
                   {[
                     { label: "School / University", name: "School", value: resumeBuilderData.education[index]?.school },
                     { label: "Course / Degree (+2, Bachelor, Master)", name: "Degree", value: resumeBuilderData.education[index]?.degree },
@@ -543,6 +597,7 @@ export default function UserResumePage() {
                       />
                     </label>
                   ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -554,19 +609,28 @@ export default function UserResumePage() {
                 Certifications
               </h2>
               {addButton("Add certification", () =>
-                setCertificationCount((count) => count + 1),
+                setCertificationIds((ids) => [...ids, certificationIdCounter.current++]),
               )}
             </div>
-            <div className="mt-4 space-y-4">
-              {Array.from({ length: certificationCount }, (_, index) => (
-                <input
-                  key={`certification-${index}`}
-                  aria-label={`Certification ${index + 1}`}
-                  name={`certification-${index}`}
-                  placeholder="Certification name"
-                  className="h-12 w-full rounded-xl border border-cyan-100 bg-white px-4 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                  defaultValue={resumeBuilderData.certifications[index] ?? ""}
-                />
+            <div className="mt-4 space-y-3">
+              {certificationIds.map((id, index) => (
+                <div key={id} className="flex items-center gap-3">
+                  <input
+                    aria-label={`Certification ${index + 1}`}
+                    name={`certification-${index}`}
+                    placeholder="Certification name"
+                    className="h-12 w-full rounded-xl border border-cyan-100 bg-white px-4 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    defaultValue={resumeBuilderData.certifications[index] ?? ""}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem(setCertificationIds, id)}
+                    aria-label={`Remove certification ${index + 1}`}
+                    className="shrink-0 text-xs font-bold text-rose-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
               ))}
             </div>
           </section>
@@ -577,19 +641,28 @@ export default function UserResumePage() {
                 Awards / Achievements
               </h2>
               {addButton("Add award", () =>
-                setAwardCount((count) => count + 1),
+                setAwardIds((ids) => [...ids, awardIdCounter.current++]),
               )}
             </div>
-            <div className="mt-4 space-y-4">
-              {Array.from({ length: awardCount }, (_, index) => (
-                <input
-                  key={`award-${index}`}
-                  aria-label={`Award ${index + 1}`}
-                  name={`award-${index}`}
-                  placeholder="Award or achievement"
-                  className="h-12 w-full rounded-xl border border-cyan-100 bg-white px-4 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
-                  defaultValue={resumeBuilderData.awards[index] ?? ""}
-                />
+            <div className="mt-4 space-y-3">
+              {awardIds.map((id, index) => (
+                <div key={id} className="flex items-center gap-3">
+                  <input
+                    aria-label={`Award ${index + 1}`}
+                    name={`award-${index}`}
+                    placeholder="Award or achievement"
+                    className="h-12 w-full rounded-xl border border-cyan-100 bg-white px-4 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                    defaultValue={resumeBuilderData.awards[index] ?? ""}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem(setAwardIds, id)}
+                    aria-label={`Remove award ${index + 1}`}
+                    className="shrink-0 text-xs font-bold text-rose-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
               ))}
             </div>
           </section>

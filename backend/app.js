@@ -24,7 +24,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "3mb" }));
 
 app.get("/server", (req, res) => {
   return res.json({
