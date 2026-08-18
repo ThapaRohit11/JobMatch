@@ -46,6 +46,25 @@ const nepalJobSeed = [
   ["Junior Accountant", "Mithila Business Group", "Janakpur", "Accounting, Tally, Excel", "On-site"],
 ];
 
+const legacyApplyBy = "30 September 2026";
+
+function applicationDeadline(index, now = new Date()) {
+  const deadline = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + 21 + ((index * 7) % 45),
+  ));
+
+  return deadline.toISOString().slice(0, 10);
+}
+
+function salaryRange(title) {
+  if (/Manager|DevOps|Cybersecurity|Engineer/.test(title)) return "NPR 70,000 - 130,000 per month";
+  if (/Developer|Analyst|Designer|Specialist|Officer/.test(title)) return "NPR 45,000 - 90,000 per month";
+  if (/Intern|Assistant|Receptionist|Data Entry/.test(title)) return "NPR 25,000 - 45,000 per month";
+  return "NPR 35,000 - 75,000 per month";
+}
+
 export default async function seedAdminData() {
   await Promise.all([
     Company.init(),
@@ -54,30 +73,45 @@ export default async function seedAdminData() {
     Application.init(),
   ]);
 
-  await Job.bulkWrite(
-    nepalJobSeed.map(([title, company, location, skills, type], index) => ({
+  const seedOperations = nepalJobSeed.flatMap(([title, company, location, skills, type], index) => {
+    const jobLocation = `${location}, Nepal`;
+    const applyBy = applicationDeadline(index);
+
+    return [{
       updateOne: {
-        filter: { title, company, location: `${location}, Nepal` },
+        filter: { title, company, location: jobLocation },
         update: {
           $setOnInsert: {
             title,
             company,
             logo: company.split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase(),
-            location: `${location}, Nepal`,
-            salary: "NPR 30,000 - 80,000 per month",
+            location: jobLocation,
+            salary: salaryRange(title),
             skills,
             type,
-            applyBy: "30 September 2026",
-            description: `Join ${company} as a ${title} and help deliver high-quality work for teams in Nepal.`,
-            responsibilities: "Collaborate with the team\nDeliver assigned work on time\nCommunicate progress clearly",
-            requirements: `Relevant experience or training\nSkills in ${skills}\nStrong communication skills`,
-            benefits: "Career growth opportunities\nCollaborative team\nPaid leave",
+            applyBy,
+            description: `${company} is seeking a motivated ${title} to join its ${type.toLowerCase()} team in ${location}. This role offers the opportunity to contribute to meaningful projects, work with experienced professionals, and grow within a supportive organization.`,
+            responsibilities: "Own assigned work from planning through delivery\nCollaborate with cross-functional colleagues and stakeholders\nMaintain high quality standards and communicate progress clearly",
+            requirements: `Relevant education, training, or professional experience\nPractical knowledge of ${skills}\nStrong communication, organization, and problem-solving skills`,
+            benefits: "Competitive compensation\nProfessional development and career growth\nCollaborative work environment\nPaid leave and public holidays",
             applicants: index % 9,
             status: "Open",
           },
         },
         upsert: true,
       },
-    })),
-  );
+    }, {
+      updateOne: {
+        filter: {
+          title,
+          company,
+          location: jobLocation,
+          applyBy: { $in: [legacyApplyBy, "", null] },
+        },
+        update: { $set: { applyBy } },
+      },
+    }];
+  });
+
+  await Job.bulkWrite(seedOperations);
 }

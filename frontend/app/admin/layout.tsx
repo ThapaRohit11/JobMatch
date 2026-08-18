@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { authorizedRequest } from "../../lib/api";
 
 const navLinks = [
   {
@@ -94,7 +95,33 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+  const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [admin, setAdmin] = useState<{ name: string; email: string } | null>(null);
+
+  const initials = useMemo(() => {
+    const name = admin?.name?.trim();
+    if (!name) return "AD";
+
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
+  }, [admin]);
+
+  useEffect(() => {
+    authorizedRequest("/api/auth/me")
+      .then((data) => setAdmin(data.user))
+      .catch(() => setAdmin(null));
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("jobmatchToken");
+    localStorage.removeItem("jobmatchUser");
+    router.push("/login");
+  }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(135deg,#f0fdfa_0%,#f8fafc_42%,#eef2ff_100%)] text-slate-950">
@@ -193,11 +220,11 @@ export default function AdminLayout({
           <div className="flex h-20 items-center justify-end gap-4 px-6">
             <div className="hidden items-center gap-3 rounded-full border border-cyan-100 bg-white px-3 py-2 shadow-sm sm:flex">
               <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-indigo-600 text-xs font-black text-white">
-                AD
+                {initials}
               </div>
               <div className="text-sm">
-                <p className="font-bold">Admin User</p>
-                <p className="text-xs text-slate-500">admin@jobmatch.com</p>
+                <p className="font-bold">{admin?.name || "Admin User"}</p>
+                <p className="text-xs text-slate-500">{admin?.email || "admin@jobmatch.com"}</p>
               </div>
             </div>
           </div>
@@ -269,12 +296,13 @@ export default function AdminLayout({
               >
                 Cancel
               </button>
-              <Link
-                href="/login"
+              <button
+                type="button"
+                onClick={handleLogout}
                 className="inline-flex h-11 items-center justify-center rounded-full bg-rose-600 px-5 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700"
               >
                 Logout
-              </Link>
+              </button>
             </div>
           </section>
         </div>

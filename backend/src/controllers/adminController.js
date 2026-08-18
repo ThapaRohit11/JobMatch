@@ -164,7 +164,7 @@ export async function getJobs(req, res, next) {
 
 export async function createJob(req, res, next) {
   try {
-    const { title, company, salary, type } = req.body;
+    const { title, company, salary, type, skills, applyBy, description, responsibilities, requirements, benefits } = req.body;
 
     if (!title?.trim() || !company?.trim() || !salary?.trim() || !type?.trim()) {
       res.status(400);
@@ -179,7 +179,15 @@ export async function createJob(req, res, next) {
     }
 
     const job = await Job.create({
-      ...req.body,
+      title,
+      salary,
+      type,
+      skills,
+      applyBy,
+      description,
+      responsibilities,
+      requirements,
+      benefits,
       company: selectedCompany.name,
       logo: selectedCompany.logo,
       location: selectedCompany.location,
@@ -193,10 +201,22 @@ export async function createJob(req, res, next) {
 
 export async function updateJob(req, res, next) {
   try {
-    const selectedCompany = await Company.findOne({ name: req.body.company });
-    const payload = selectedCompany
-      ? { ...req.body, company: selectedCompany.name, logo: selectedCompany.logo, location: selectedCompany.location }
-      : req.body;
+    const { title, company, salary, type, skills, applyBy, description, responsibilities, requirements, benefits } = req.body;
+    const selectedCompany = await Company.findOne({ name: company });
+    const payload = {
+      title,
+      salary,
+      type,
+      skills,
+      applyBy,
+      description,
+      responsibilities,
+      requirements,
+      benefits,
+      ...(selectedCompany
+        ? { company: selectedCompany.name, logo: selectedCompany.logo, location: selectedCompany.location }
+        : {}),
+    };
     const job = await Job.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
 
     if (!job) {
@@ -258,7 +278,12 @@ export async function createCompany(req, res, next) {
 
 export async function updateCompany(req, res, next) {
   try {
-    const company = await Company.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { name, industry, location } = req.body;
+    const company = await Company.findByIdAndUpdate(
+      req.params.id,
+      { name, industry, location },
+      { new: true, runValidators: true },
+    );
 
     if (!company) {
       res.status(404);

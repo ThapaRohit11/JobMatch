@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSavedUserJobs, setUserJobSaved, type UserJob } from "../../../lib/user-api";
-import { isJobClosed } from "../../../lib/job-deadline";
+import { formatJobDeadline, isJobClosed } from "../../../lib/job-deadline";
 
 export default function SavedJobsPage() {
   const [jobs, setJobs] = useState<UserJob[]>([]);
@@ -64,7 +64,7 @@ export default function SavedJobsPage() {
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase text-slate-400">Type</p><p className="mt-1 text-sm font-black text-slate-800">{job.type}</p></div>
-                <div className="rounded-2xl bg-rose-50 p-4"><p className="text-xs font-black uppercase text-rose-300">Apply By</p><p className="mt-1 text-sm font-black text-rose-700">{job.applyBy || "Not set"}</p></div>
+                <div className="rounded-2xl bg-rose-50 p-4"><p className="text-xs font-black uppercase text-rose-300">Apply By</p><p className="mt-1 text-sm font-black text-rose-700">{formatJobDeadline(job.applyBy)}</p></div>
               </div>
               <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-5">
                 <span className={`rounded-full px-3 py-1.5 text-xs font-black ${closed ? "bg-slate-100 text-slate-500" : "bg-emerald-50 text-emerald-700"}`}>{closed ? "Closed" : "Open"}</span>

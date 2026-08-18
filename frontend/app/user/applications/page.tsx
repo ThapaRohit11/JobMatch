@@ -5,6 +5,7 @@ import {
   getUserApplications,
   UserApplication,
 } from "../../../lib/user-api";
+import { formatJobDeadline } from "../../../lib/job-deadline";
 
 function statusClasses(status: string) {
   if (status === "Accepted") {
@@ -115,7 +116,7 @@ function JobDetailsModal({
                 </div>
                 <div className="rounded-2xl bg-rose-50 p-4">
                   <p className="text-xs font-black uppercase text-rose-300">Apply By</p>
-                  <p className="mt-1 text-sm font-black text-rose-700">{job.applyBy || "Not set"}</p>
+                  <p className="mt-1 text-sm font-black text-rose-700">{formatJobDeadline(job.applyBy)}</p>
                 </div>
               </div>
 

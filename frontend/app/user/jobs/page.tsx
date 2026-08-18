@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { applyToUserJob, getUserJobs, setUserJobSaved, UserJob } from "../../../lib/user-api";
-import { isJobClosed } from "../../../lib/job-deadline";
+import { formatJobDeadline, isJobClosed } from "../../../lib/job-deadline";
 
 type Job = UserJob;
 
@@ -122,7 +122,7 @@ function JobDetailsModal({
                 Apply By
               </p>
               <p className="mt-1 text-sm font-black text-rose-700">
-                {job.applyBy || "Not set"}
+                {formatJobDeadline(job.applyBy)}
               </p>
             </div>
           </div>
@@ -400,7 +400,7 @@ export default function UserJobsPage() {
                   Apply By
                 </p>
                 <p className="mt-1 text-sm font-black text-rose-700">
-                  {job.applyBy || "Not set"}
+                  {formatJobDeadline(job.applyBy)}
                 </p>
               </div>
             </div>
