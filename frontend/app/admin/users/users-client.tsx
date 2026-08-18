@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminUser, getAdminUsers } from "../../../lib/admin-api";
+import { AdminUser, deleteAdminUser, getAdminUsers } from "../../../lib/admin-api";
 
 type User = AdminUser;
 
@@ -354,9 +354,73 @@ function UserDetailModal({
   );
 }
 
+function DeleteUserModal({
+  user,
+  onCancel,
+  onConfirm,
+}: {
+  user: User;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 px-4 backdrop-blur-md">
+      <button
+        aria-label="Cancel delete"
+        className="absolute inset-0 cursor-default"
+        onClick={onCancel}
+      />
+      <section className="relative z-10 w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl shadow-slate-900/20">
+        <div className="grid h-14 w-14 place-items-center rounded-full bg-rose-50 text-rose-600">
+          <svg
+            aria-hidden="true"
+            className="h-7 w-7"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+          >
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6 18 20H6L5 6" />
+            <path d="M10 11v5" />
+            <path d="M14 11v5" />
+          </svg>
+        </div>
+        <h2 className="mt-5 text-2xl font-black text-slate-950">
+          Delete this user?
+        </h2>
+        <p className="mt-3 leading-7 text-slate-600">
+          Are you sure you want to delete{" "}
+          <span className="font-bold text-slate-900">{user.name}</span> (
+          {user.email})? Their resume and applications will also be removed.
+          This action cannot be undone.
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            className="h-11 rounded-full border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            className="h-11 rounded-full bg-rose-600 px-5 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700"
+            onClick={onConfirm}
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
 
   useEffect(() => {
     getAdminUsers().then((data) => {
@@ -480,25 +544,49 @@ export default function AdminUsersPage() {
                   </td>
 
                   <td className="px-8 py-6 text-right">
-                    <button
-                      aria-label={`View ${user.name}`}
-                      className="inline-grid h-10 w-10 place-items-center rounded-full text-slate-400 transition hover:bg-cyan-50 hover:text-cyan-700"
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      <svg
-                        aria-hidden="true"
-                        className="h-5 w-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        aria-label={`View ${user.name}`}
+                        className="inline-grid h-10 w-10 place-items-center rounded-full text-slate-400 transition hover:bg-cyan-50 hover:text-cyan-700"
+                        onClick={() => setSelectedUser(user)}
                       >
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    </button>
+                        <svg
+                          aria-hidden="true"
+                          className="h-5 w-5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                        >
+                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </button>
+                      <button
+                        aria-label={`Delete ${user.name}`}
+                        className="inline-grid h-10 w-10 place-items-center rounded-full text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                        onClick={() => setDeletingUser(user)}
+                      >
+                        <svg
+                          aria-hidden="true"
+                          className="h-5 w-5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="M19 6 18 20H6L5 6" />
+                          <path d="M10 11v5" />
+                          <path d="M14 11v5" />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -511,6 +599,20 @@ export default function AdminUsersPage() {
         <UserDetailModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
+        />
+      )}
+
+      {deletingUser && (
+        <DeleteUserModal
+          user={deletingUser}
+          onCancel={() => setDeletingUser(null)}
+          onConfirm={async () => {
+            await deleteAdminUser(deletingUser.id);
+            setUsers((current) =>
+              current.filter((user) => user.id !== deletingUser.id),
+            );
+            setDeletingUser(null);
+          }}
         />
       )}
     </div>
