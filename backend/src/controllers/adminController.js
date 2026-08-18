@@ -387,24 +387,3 @@ export async function getUsers(req, res, next) {
     return next(error);
   }
 }
-
-export async function deleteUser(req, res, next) {
-  try {
-    const user = await User.findOne({ _id: req.params.id, role: "user" });
-
-    if (!user) {
-      res.status(404);
-      throw new Error("User not found");
-    }
-
-    await Promise.all([
-      Resume.deleteOne({ $or: [{ user: user._id }, { email: user.email }] }),
-      Application.deleteMany({ email: user.email }),
-      User.findByIdAndDelete(user._id),
-    ]);
-
-    return res.json({ success: true, message: "User deleted successfully" });
-  } catch (error) {
-    return next(error);
-  }
-}

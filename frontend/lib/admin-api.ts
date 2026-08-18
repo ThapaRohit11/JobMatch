@@ -181,7 +181,3 @@ export function updateAdminResume(
 export function getAdminUsers() {
   return authorizedRequest("/api/admin/users");
 }
-
-export function deleteAdminUser(id: string) {
-  return authorizedRequest(`/api/admin/users/${id}`, { method: "DELETE" });
-}
